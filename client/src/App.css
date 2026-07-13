@@ -1,0 +1,106 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 🌙 DARK MODE FIXES */
+:root {
+  --bg-light: #ffffff;
+  --text-light: #000000;
+  --bg-dark: #121212;
+  --text-dark: #ffffff;
+}
+
+/* Light Theme */
+html.light {
+  background-color: var(--bg-light);
+  color: var(--text-light);
+}
+
+/* Dark Theme */
+html.dark {
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+}
+
+/* ✅ Make ALL text white in dark mode */
+html.dark,
+html.dark body,
+html.dark body * {
+  color: var(--text-dark) !important;
+}
+
+/* ✅ Fix inputs & dropdowns */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+  border: 1px solid #555 !important;
+}
+
+html.dark option {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+}
+
+/* ✅ Fix buttons */
+html.dark button {
+  background-color: #333 !important;
+  color: #fff !important;
+  border: 1px solid #555 !important;
+}
+
+/* ✅ Fix cards & containers */
+html.dark .bg-white,
+html.dark .card,
+html.dark .container {
+  background-color: #1e1e1e !important;
+  color: #ffffff !important;
+}
+
+/* ✅ Fix Tailwind text colors */
+html.dark .text-black,
+html.dark .text-gray-700,
+html.dark .text-gray-800 {
+  color: #ffffff !important;
+}
+
+/* ✅ Fix links */
+html.dark a {
+  color: #ffffff !important;
+}
