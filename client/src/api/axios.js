@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const instance = axios.create({
-  baseURL: "http://localhost:5000", // ✅ or your deployed backend URL
+  baseURL: process.env.REACT_APP_API_URL || "https://swavio-backend.onrender.com",
   withCredentials: false,
 });
 
