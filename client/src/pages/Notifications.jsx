@@ -13,7 +13,7 @@ export default function Notifications() {
   useEffect(() => {
     if (isOpen && notifications.length === 0) {
       axios
-        .get(`http://localhost:5000/api/notifications/${userId}`)
+        .get(`${process.env.REACT_APP_API_URL}/api/dashboard/${userId}`)
         .then((res) => setNotifications(res.data))
         .catch((err) => console.error("Error fetching notifications:", err));
     }
