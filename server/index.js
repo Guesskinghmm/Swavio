@@ -29,9 +29,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: ["https://swavio.vercel.app", "http://localhost:3000"], 
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    credentials: true
   },
 });
 
@@ -43,7 +43,11 @@ export { io };
 export const onlineUsers = {}; // Track online users
 
 // ✅ Middleware
-app.use(cors());
+app.use(cors({
+  origin: ["https://swavio.vercel.app", "http://localhost:3000"], 
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+}));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use((req, res, next) => {
