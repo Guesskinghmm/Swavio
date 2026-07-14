@@ -19,7 +19,7 @@ export default function Matchmaking() {
 
   const sendConnectionRequest = async (otherUserId) => {
     try {
-      await axios.post("http://localhost:5000/api/connection/request", {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/connection/request`, {
         from: userId,
         to: otherUserId,
       });
@@ -39,7 +39,7 @@ export default function Matchmaking() {
     try {
       const params = { ...filters };
       const res = await axios.get(
-        `http://localhost:5000/api/match/${userId}`,
+        `${process.env.REACT_APP_API_URL}/api/match/${userId}`,
         { params }
       );
       setMatches(res.data);

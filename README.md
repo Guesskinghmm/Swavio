@@ -67,7 +67,7 @@ npm install
 
 Create a `.env` file in the `client/` directory:
 ```env
-REACT_APP_API_URL=http://localhost:5000
+REACT_APP_API_URL
 ```
 
 Start the React development server:

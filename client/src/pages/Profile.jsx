@@ -16,7 +16,7 @@ export default function Profile() {
   const fetchProfile = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/users/profile/${loggedInUserId}`
+        `${process.env.REACT_APP_API_URL}/api/users/profile/${loggedInUserId}`
       );
       const userData = res.data;
 
@@ -81,7 +81,7 @@ export default function Profile() {
         data.append("profilePicture", selectedFile);
 
         res = await axios.put(
-          `http://localhost:5000/api/users/${loggedInUserId}`,
+          `${process.env.REACT_APP_API_URL}/api/users/${loggedInUserId}`,
           data,
           { headers: { "Content-Type": "multipart/form-data" } }
         );
@@ -94,7 +94,7 @@ export default function Profile() {
         });
 
         res = await axios.put(
-          `http://localhost:5000/api/users/${loggedInUserId}`,
+          `${process.env.REACT_APP_API_URL}/api/users/${loggedInUserId}`,
           payload
         );
       }
@@ -115,7 +115,7 @@ export default function Profile() {
   const deleteProfilePicture = async () => {
     try {
       await axios.delete(
-        `http://localhost:5000/api/users/profile-picture/${loggedInUserId}`
+        `${process.env.REACT_APP_API_URL}/api/users/profile-picture/${loggedInUserId}`
       );
       alert("🗑 Profile picture deleted!");
       fetchProfile();

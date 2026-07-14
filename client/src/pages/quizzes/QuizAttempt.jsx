@@ -13,7 +13,7 @@ export default function QuizAttempt() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/quizzes/generate", {
+    fetch(`${process.env.REACT_APP_API_URL}/api/quizzes/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ skill }),
@@ -43,7 +43,7 @@ export default function QuizAttempt() {
   const handleSubmit = () => {
     setSubmitting(true);
 
-    fetch("http://localhost:5000/api/quizzes/submit", {
+    fetch(`${process.env.REACT_APP_API_URL}/api/quizzes/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

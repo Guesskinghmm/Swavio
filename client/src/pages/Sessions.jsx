@@ -32,7 +32,7 @@ export default function Sessions() {
 
   const fetchStudents = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users");
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/users`);
       setStudents(res.data.filter((u) => u._id !== userId));
     } catch (err) {
       console.error("❌ Error fetching users", err);
@@ -41,7 +41,7 @@ export default function Sessions() {
 
   const fetchSessions = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/sessions/${userId}`);
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/sessions/${userId}`);
       setSessions(res.data);
     } catch (err) {
       console.error("❌ Error fetching sessions", err);
@@ -75,8 +75,8 @@ export default function Sessions() {
 
     try {
       editId
-        ? await axios.put(`http://localhost:5000/api/sessions/${editId}`, payload)
-        : await axios.post("http://localhost:5000/api/sessions", payload);
+        ? await axios.put(`${process.env.REACT_APP_API_URL}/api/sessions/${editId}`, payload)
+        : await axios.post(`${process.env.REACT_APP_API_URL}/api/sessions`, payload);
 
       fetchSessions();
       resetForm();
@@ -111,7 +111,7 @@ export default function Sessions() {
   const handleDelete = async (id) => {
     if (!window.confirm("⚠️ Are you sure you want to delete this session?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/sessions/${id}`);
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/sessions/${id}`);
       fetchSessions();
     } catch (err) {
       console.error("❌ Error deleting session", err);
@@ -121,7 +121,7 @@ export default function Sessions() {
   const handleCompleteSession = async () => {
     try {
       await axios.put(
-        `http://localhost:5000/api/sessions/${selectedSession._id}/complete`,
+        `${process.env.REACT_APP_API_URL}/api/sessions/${selectedSession._id}/complete`,
         { rating, feedback }
       );
       setShowModal(false);

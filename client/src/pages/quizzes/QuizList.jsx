@@ -13,7 +13,7 @@ export default function QuizList() {
 
     if (!userId) return;
 
-    fetch(`http://localhost:5000/api/users/${userId}`)
+    fetch(`${process.env.REACT_APP_API_URL}/api/users/${userId}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.skillsToLearn?.length > 0) {

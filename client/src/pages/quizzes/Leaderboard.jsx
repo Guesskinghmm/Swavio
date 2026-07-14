@@ -13,7 +13,7 @@ export default function Leaderboard() {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/quizzes/leaderboard");
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/quizzes/leaderboard`);
         setLeaders(res.data || []);
       } catch (err) {
         console.error("❌ Failed to fetch leaderboard:", err);

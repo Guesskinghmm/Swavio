@@ -14,7 +14,7 @@ export default function NotificationBell({ userId, socket }) {
   useEffect(() => {
     if (!userId) return;
     axios
-      .get(`http://localhost:5000/api/notifications/${userId}`)
+      .get(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}`)
       .then((res) => setNotifications(res.data))
       .catch((err) => console.error("Error fetching notifications:", err));
   }, [userId]);
@@ -56,7 +56,7 @@ export default function NotificationBell({ userId, socket }) {
   const handleNotificationClick = async (notif) => {
     try {
       if (!notif.isRead) {
-        await axios.put(`http://localhost:5000/api/notifications/${notif._id}/read`);
+        await axios.put(`${process.env.REACT_APP_API_URL}/api/notifications/${notif._id}/read`);
         setNotifications((prev) =>
           prev.map((n) => (n._id === notif._id ? { ...n, isRead: true } : n))
         );
@@ -69,7 +69,7 @@ export default function NotificationBell({ userId, socket }) {
 
   const markAllAsRead = async () => {
     try {
-      await axios.put(`http://localhost:5000/api/notifications/${userId}/read-all`);
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}/read-all`);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {
       console.error("Error marking all notifications as read:", err);
@@ -78,7 +78,7 @@ export default function NotificationBell({ userId, socket }) {
 
   const clearAllNotifications = async () => {
     try {
-      await axios.delete(`http://localhost:5000/api/notifications/${userId}/clear`);
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}/clear`);
       setNotifications([]);
     } catch (err) {
       console.error("Error clearing notifications:", err);

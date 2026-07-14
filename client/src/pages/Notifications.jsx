@@ -43,7 +43,7 @@ export default function Notifications() {
 
   const markAsRead = async (id, link) => {
     try {
-      await axios.put(`http://localhost:5000/api/notifications/${id}/read`);
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/notifications/${id}/read`);
       window.location.href = link || "/";
     } catch (err) {
       console.error("Error marking notification as read:", err);

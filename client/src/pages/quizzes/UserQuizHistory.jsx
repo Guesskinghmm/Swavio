@@ -9,7 +9,7 @@ export default function UserQuizHistory() {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/api/quizzes/history/${userId}`)
+      .get(`${process.env.REACT_APP_API_URL}/api/quizzes/history/${userId}`)
       .then((res) => {
         setData(res.data);
         setLoading(false);

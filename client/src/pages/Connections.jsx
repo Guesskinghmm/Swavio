@@ -14,9 +14,9 @@ export default function Connections() {
   const fetchConnections = async () => {
     try {
       const [pendingRes, sentRes, acceptedRes] = await Promise.all([
-        axios.get(`http://localhost:5000/api/connection/pending/${userId}`),
-        axios.get(`http://localhost:5000/api/connection/pending/sent/${userId}`),
-        axios.get(`http://localhost:5000/api/connection/accepted/${userId}`),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/connection/pending/${userId}`),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/connection/pending/sent/${userId}`),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/connection/accepted/${userId}`),
       ]);
       setPendingReceived(pendingRes.data || []);
       setPendingSent(sentRes.data || []);
@@ -34,7 +34,7 @@ export default function Connections() {
 
   const handleAccept = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/connection/accept/${id}`);
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/connection/accept/${id}`);
       fetchConnections();
     } catch (err) {
       console.error("Failed to accept request:", err);
@@ -43,7 +43,7 @@ export default function Connections() {
 
   const handleReject = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/connection/${id}`);
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/connection/${id}`);
       fetchConnections();
     } catch (err) {
       console.error("Failed to reject/cancel request:", err);
