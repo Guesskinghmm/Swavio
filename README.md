@@ -1,37 +1,38 @@
 # Swavio
 
-A clean, minimalist full-stack platform enabling real-time messaging and peer-to-peer video conferencing over the web.
+A premium, minimalist full-stack platform enabling peer-to-peer skill exchange, real-time messaging, video conferencing, and gamified skill assessments.
 
 ---
 
-##  Key Features
+## Key Features
 
-*   **Real-Time Messaging:** Instantaneous, low-latency text chat powered by WebSockets.
-*   **Video Conferencing:** High-fidelity audio/video rooms using authenticated WebRTC signaling.
-*   **Secure Authentication:** User data protection and session management via JSON Web Tokens (JWT).
-*   **Cloud Architecture:** Fully decoupled client-server architecture backed by a cloud-managed NoSQL cluster.
+- **Minimalist Design System**: Sleek, professional, and accessible user interface built on a custom Tailwind system utilizing modern typography (`Inter`), frosted glass navbar effects, and cohesive card container styles.
+- **Master-Detail Messages**: Dual-column message layouts with a connections sidebar (displaying real-time unread badges) and an active conversation pane with integrated media sharing.
+- **Smart Link Parsing**: In-chat links to video calls (such as secure Jitsi conferences) are automatically parsed into styled "Join Video Call" action buttons instead of raw URLs.
+- **Interactive Quizzes & Leaderboards**: Skill assessment tests with responsive quiz answer select forms, animated confetti pass badges, and a rank-styled leaderboard table.
+- **Dynamic Browser Status**: Active tab title syncs dynamically with the number of unread notifications, automatically updating browser tabs.
+- **Secure Architecture**: User authentication managed via JWT, with dedicated endpoints for marking messages/notifications as read in the database.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 | :--- | :--- |
-| **Frontend** | React, Context API, CSS3 |
-| **Backend** | Node.js, Express.js, Socket.io |
-| **Database** | MongoDB Atlas (Cloud Cluster) |
-| **Integrations** | Jitsi vPaaS / WebRTC |
-| **Deployment** | Vercel (Client), Render (Server) |
+| **Frontend** | React, React Router Dom, TailwindCSS, Framer Motion, Lucide Icons |
+| **Backend** | Node.js, Express.js, Socket.io, Multer |
+| **Database** | MongoDB (Mongoose Schema mapping) |
+| **Integrations** | Jitsi Meet WebRTC, Canvas Confetti |
 
 ---
 
-## 💻 Local Setup
+## Local Setup
 
 Follow these steps to run the client and server environments locally:
 
 ### 1. Prerequisites
-* Node.js (v18+ recommended)
-* MongoDB Atlas account or local MongoDB instance
+- Node.js (v18+ recommended)
+- MongoDB Atlas account or local MongoDB instance
 
 ### 2. Backend Configuration
 Navigate to the server directory, install dependencies, and configure environment variables.
@@ -65,16 +66,10 @@ npm install
 
 Create a `.env` file in the `client/` directory:
 ```env
-REACT_APP_API_URL
+REACT_APP_API_URL=http://localhost:5000
 ```
 
 Start the React development server:
 ```bash
 npm start
 ```
-
----
-
-## 🔒 Security & Architecture Notes
-*   **Environment Isolation:** All cryptographic secrets, database credentials, and private keys are strictly managed via environment variables and isolated from source control via `.gitignore`.
-*   **Signaling Infrastructure:** WebSockets handle the initial signaling and state coordination, while the actual video streams leverage Jitsi’s secure media infrastructure.

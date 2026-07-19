@@ -86,19 +86,47 @@ export default function NotificationBell({ userId, socket }) {
     }
   };
 
+  // Sync notifications fetch with custom event
+  const fetchNotifications = React.useCallback(() => {
+    if (!userId) return;
+    axios
+      .get(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}`)
+      .then((res) => setNotifications(res.data))
+      .catch((err) => console.error("Error fetching notifications:", err));
+  }, [userId]);
+
+  // Sync document.title dynamically based on unread notification count
+  useEffect(() => {
+    if (unreadCount > 0) {
+      document.title = `(${unreadCount}) Swavio`;
+    } else {
+      document.title = "Swavio";
+    }
+    return () => {
+      document.title = "Swavio";
+    };
+  }, [unreadCount]);
+
+  useEffect(() => {
+    window.addEventListener("notifications-updated", fetchNotifications);
+    return () => {
+      window.removeEventListener("notifications-updated", fetchNotifications);
+    };
+  }, [fetchNotifications]);
+
   return (
     <div className="relative notification-bell" ref={dropdownRef}>
       <button
         onClick={() => setShowDropdown((prev) => !prev)}
-        className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+        className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       >
-        <Bell className="w-6 h-6 text-white" />
+        <Bell className="w-5 h-5 text-gray-700 dark:text-gray-200" />
         <AnimatePresence>
           {unreadCount > 0 && (
             <motion.span
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full shadow"
+              className="absolute top-0 right-0 bg-brand-500 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full shadow"
             >
               {unreadCount}
             </motion.span>

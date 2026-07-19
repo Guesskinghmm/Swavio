@@ -5,6 +5,7 @@ const messageSchema = new mongoose.Schema({
   receiverId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   text: String,
   fileUrl: String,
+  read: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export default mongoose.model('Message', messageSchema);

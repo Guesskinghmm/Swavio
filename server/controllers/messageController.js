@@ -60,3 +60,24 @@ export const deleteChat = async (req, res) => {
     res.status(500).json({ message: 'Error clearing chat', err });
   }
 };
+
+// ── Mark all messages from sender to receiver as read ──
+export const markMessagesAsRead = async (req, res) => {
+  const { senderId, receiverId } = req.params;
+  try {
+    // Mark messages in the database as read: true
+    await Message.updateMany(
+      { senderId, receiverId, read: false },
+      { read: true }
+    );
+    // Mark notifications of type 'message' as isRead: true
+    await Notification.updateMany(
+      { user: receiverId, type: "message", link: `/chat?to=${senderId}`, isRead: false },
+      { isRead: true }
+    );
+    res.status(200).json({ message: "Messages and notifications marked as read" });
+  } catch (err) {
+    console.error("markMessagesAsRead error:", err);
+    res.status(500).json({ message: "Failed to mark messages as read", err });
+  }
+};

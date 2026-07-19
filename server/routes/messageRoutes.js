@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { sendMessage, getMessages, deleteChat } from '../controllers/messageController.js';
+import { sendMessage, getMessages, deleteChat, markMessagesAsRead } from '../controllers/messageController.js';
 
 const router = express.Router();
 
@@ -29,5 +29,6 @@ const upload = multer({
 router.post('/', upload.single('file'), sendMessage);
 router.get('/:senderId/:receiverId', getMessages);
 router.delete('/:userId/:receiverId', deleteChat);
+router.put('/:senderId/:receiverId/read', markMessagesAsRead);
 
 export default router;
