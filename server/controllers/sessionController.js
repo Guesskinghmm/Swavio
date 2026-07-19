@@ -51,18 +51,23 @@ export const createSession = async (req, res) => {
     student.sessionsLearned += 1;
     await student.save();
 
-    // ✅ Send Notifications
-    const msg = `📅 You scheduled a session with ${student.fullName} for ${skill} at ${sessionDateTime.toLocaleString("en-IN")}`;
+    // ✅ Send personalised Notifications (correct subject for each recipient)
+    const dateStr = sessionDateTime.toLocaleDateString("en-IN", { dateStyle: "medium" });
+    const timeStr = sessionDateTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+    const teacherMsg = `📅 Session confirmed: you'll teach "${skill}" to ${student.fullName} on ${dateStr} at ${timeStr}`;
+    const studentMsg = `📅 ${teacher.fullName} scheduled a "${skill}" session with you on ${dateStr} at ${timeStr}`;
+
     const teacherNotif = await Notification.create({
       user: teacherId,
       type: "session",
-      message: msg,
+      message: teacherMsg,
       link: "/sessions",
     });
     const studentNotif = await Notification.create({
       user: studentId,
       type: "session",
-      message: msg,
+      message: studentMsg,
       link: "/sessions",
     });
 

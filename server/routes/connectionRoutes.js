@@ -55,7 +55,7 @@ router.get("/pending/:userId", async (req, res) => {
     const pending = await Connection.find({
       user2: userId,
       status: "pending",
-    }).populate("user1 user2", "fullName email profilePicture availability");
+    }).populate("user1 user2", "fullName profilePicture availability");
     res.json(pending);
   } catch (err) {
     console.error("Error fetching pending requests:", err);
@@ -70,7 +70,7 @@ router.get("/pending/sent/:userId", async (req, res) => {
     const sent = await Connection.find({
       user1: userId,
       status: "pending",
-    }).populate("user1 user2", "fullName email profilePicture availability");
+    }).populate("user1 user2", "fullName profilePicture availability");
     res.json(sent);
   } catch (err) {
     console.error("Error fetching sent pending requests:", err);
@@ -85,7 +85,7 @@ router.get("/accepted/:userId", async (req, res) => {
     const accepted = await Connection.find({
       status: "accepted",
       $or: [{ user1: userId }, { user2: userId }],
-    }).populate("user1 user2", "fullName email profilePicture availability");
+    }).populate("user1 user2", "fullName profilePicture availability");
 
     res.json(accepted);
   } catch (err) {
@@ -105,7 +105,7 @@ router.put("/accept/:id", async (req, res) => {
     // Step 2: fetch with populated users
     const conn = await Connection.findById(id).populate(
       "user1 user2",
-      "fullName email profilePicture availability"
+      "fullName profilePicture availability"
     );
 
     if (!conn) return res.status(404).json({ message: "Connection not found" });

@@ -211,6 +211,9 @@ export default function Chat() {
   // Named Socket Handlers (Phase 2 & Phase 3)
   useEffect(() => {
     const handleReceiveMessage = (msg) => {
+      // ✅ Skip our own messages — already appended optimistically in sendMessage()
+      if (msg.senderId === userId) return;
+
       const isCurrentActive = activeChatUser && msg.senderId === activeChatUser._id;
       if (
         (msg.senderId === activeChatUser?._id && msg.receiverId === userId) ||
@@ -381,7 +384,9 @@ export default function Chat() {
                       {otherUser.fullName}
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                      {otherUser.email}
+                      {otherUser.availability?.[0]
+                        ? `${otherUser.availability[0].day} · ${otherUser.availability[0].time}`
+                        : "SkillSwap Member"}
                     </p>
                   </div>
                   {userUnreadCount > 0 && (
@@ -553,7 +558,8 @@ export default function Chat() {
                 </button>
 
                 <input
-                  className="flex-1 min-w-0 px-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-xl border border-transparent focus:outline-none focus:border-brand-400 focus:bg-white dark:focus:bg-gray-700 transition-colors placeholder-gray-400"
+                  disabled={sending}
+                  className="flex-1 min-w-0 px-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-xl border border-transparent focus:outline-none focus:border-brand-400 focus:bg-white dark:focus:bg-gray-700 transition-colors placeholder-gray-400 disabled:opacity-60 disabled:cursor-not-allowed"
                   placeholder="Write a message…"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
