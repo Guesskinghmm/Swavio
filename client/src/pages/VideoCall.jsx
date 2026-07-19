@@ -8,7 +8,7 @@ export default function VideoCall() {
   useEffect(() => {
     const fetchMeeting = async () => {
       try {
-        const { data } = await axios.get("/api/video/create-room");
+        const { data } = await axios.get(`${process.env.REACT_APP_API_URL}/api/video/create-room`);
         setMeetingUrl(data.meetingUrl);
       } catch (err) {
         console.error("Error creating meeting:", err);
