@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+  </defs>
+  <!-- Sleek geometric chat bubble + video node concept -->
+  <path d="M6 8C6 5.79086 7.79086 4 10 4H22C24.2091 4 26 5.79086 26 8V18C26 20.2091 24.2091 22 22 22H14L8 26V22H6V8Z" fill="url(#brand-grad)" />
+  <circle cx="16" cy="13" r="3.5" fill="#ffffff" />
+  <polygon points="20.5,10.5 20.5,15.5 23,14 23,12" fill="#ffffff" opacity="0.9" />
+</svg>
