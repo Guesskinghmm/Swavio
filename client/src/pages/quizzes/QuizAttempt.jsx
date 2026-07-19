@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, Brain, ArrowRight } from "lucide-react";
 
 export default function QuizAttempt() {
   const { skill } = useParams();
@@ -24,12 +24,12 @@ export default function QuizAttempt() {
           setQuestions(data);
           setAnswers(Array(data.length).fill(""));
         } else {
-          setError("❌ No questions available for this skill.");
+          setError("No questions available for this skill.");
         }
         setLoading(false);
       })
       .catch(() => {
-        setError("❌ Server not responding. Please try again later.");
+        setError("Server not responding. Please try again later.");
         setLoading(false);
       });
   }, [skill]);
@@ -58,62 +58,75 @@ export default function QuizAttempt() {
       .finally(() => setSubmitting(false));
   };
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="flex justify-center items-center h-60">
-        <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
-        <span className="ml-2">Loading quiz...</span>
+      <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <Loader2 className="animate-spin w-8 h-8 text-brand-500" />
+        <span className="text-sm text-gray-500">Loading quiz…</span>
       </div>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
-      <p className="text-center text-red-500 text-lg mt-10 font-semibold">
-        {error}
-      </p>
+      <div className="max-w-md mx-auto text-center py-16">
+        <p className="text-sm text-red-500 font-semibold">{error}</p>
+        <button
+          onClick={() => navigate("/quizzes")}
+          className="btn btn-secondary btn-md mt-4"
+        >
+          Go Back
+        </button>
+      </div>
     );
+  }
+
+  const answeredCount = answers.filter((a) => a !== "").length;
 
   return (
-    <motion.div
-      className="p-6 max-w-4xl mx-auto text-gray-900 dark:text-gray-100"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
+    <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold">
-          🧠 Quiz on <span className="text-blue-600">{skill}</span>
-        </h2>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
-          {answers.filter((a) => a !== "").length}/{questions.length} answered
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Brain size={16} className="text-brand-500" />
+            <span className="text-xs font-semibold tracking-widest uppercase text-brand-500">
+              Assessment In Progress
+            </span>
+          </div>
+          <h1 className="page-title">
+            Quiz: {skill}
+          </h1>
+        </div>
+        <span className="badge-brand self-start sm:self-center">
+          {answeredCount} of {questions.length} answered
+        </span>
       </div>
 
       {/* Questions */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {questions.map((q, i) => (
           <motion.div
             key={i}
-            className="border rounded-xl shadow-md p-5 bg-white dark:bg-gray-800 hover:shadow-lg transition-all"
-            initial={{ opacity: 0, y: 20 }}
+            className="card card-p bg-white dark:bg-gray-800"
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
+            transition={{ delay: i * 0.04 }}
           >
-            <p className="font-semibold text-lg mb-3">
+            <p className="text-base font-semibold text-gray-900 dark:text-white mb-4">
               {i + 1}. {q.question}
             </p>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-2">
               {q.options.map((opt, idx) => {
                 const selected = answers[i] === opt;
                 return (
                   <label
                     key={idx}
-                    className={`flex items-center gap-3 cursor-pointer border rounded-lg px-4 py-2 transition-all
-                      ${
-                        selected
-                          ? "bg-blue-100 dark:bg-blue-900 border-blue-500"
-                          : "bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
-                      }`}
+                    className={`flex items-center gap-3 cursor-pointer border rounded-xl px-4 py-3 transition-colors ${
+                      selected
+                        ? "border-brand-500 bg-brand-50/50 dark:bg-brand-900/10"
+                        : "border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20 hover:bg-gray-100/50 dark:hover:bg-gray-850"
+                    }`}
                   >
                     <input
                       type="radio"
@@ -123,8 +136,12 @@ export default function QuizAttempt() {
                       onChange={() => handleAnswerSelect(i, opt)}
                       className="hidden"
                     />
-                    <span className="flex-1">{opt}</span>
-                    {selected && <CheckCircle className="text-blue-500 w-5 h-5" />}
+                    <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">
+                      {opt}
+                    </span>
+                    {selected && (
+                      <CheckCircle className="text-brand-500 shrink-0" size={16} />
+                    )}
                   </label>
                 );
               })}
@@ -134,25 +151,30 @@ export default function QuizAttempt() {
       </div>
 
       {/* Submit Button */}
-      <div className="mt-8 text-center">
+      <div className="mt-8 flex flex-col items-center">
         <button
           onClick={handleSubmit}
           disabled={submitting || answers.includes("")}
-          className={`px-6 py-3 rounded-lg text-lg font-semibold transition-all
-            ${
-              submitting || answers.includes("")
-                ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl"
-            }`}
+          className="btn btn-primary btn-lg w-full sm:w-auto px-10 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {submitting ? "Submitting..." : "🚀 Submit Quiz"}
+          {submitting ? (
+            <>
+              <Loader2 className="animate-spin shrink-0" size={16} />
+              Submitting…
+            </>
+          ) : (
+            <>
+              Submit Quiz
+              <ArrowRight size={16} />
+            </>
+          )}
         </button>
         {answers.includes("") && (
-          <p className="text-sm text-gray-500 mt-2">
-            ⚠️ Please answer all questions before submitting.
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+            Please answer all questions before submitting.
           </p>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { CheckCircle, XCircle, ChevronRight, Award, AlertCircle } from "lucide-react";
 
 export default function QuizResult() {
   const { state } = useLocation();
@@ -11,7 +12,7 @@ export default function QuizResult() {
   const percentage = total ? Math.round((score / total) * 100) : 0;
   const isPass = percentage >= 60;
 
-  // 🎉 Confetti Effect on Passing
+  // Confetti Effect on Passing
   useEffect(() => {
     if (isPass) {
       import("canvas-confetti").then((confetti) => {
@@ -24,83 +25,101 @@ export default function QuizResult() {
     }
   }, [isPass]);
 
-  // ✅ Show message if no result data
+  // Show message if no result data
   if (!state) {
     return (
-      <div className="flex flex-col items-center justify-center mt-20 text-center">
-        <p className="text-lg text-gray-500">No results found.</p>
-        <div className="flex gap-4 mt-4">
+      <div className="max-w-md mx-auto text-center py-20 flex flex-col items-center gap-4">
+        <AlertCircle size={32} className="text-gray-300 dark:text-gray-600" />
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            No results found
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            We couldn&apos;t retrieve any quiz results. Try taking a quiz first.
+          </p>
+        </div>
+        <div className="flex gap-2">
           <button
             onClick={() => navigate("/quizzes")}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            className="btn btn-primary btn-md"
           >
             Take a Quiz
           </button>
           <button
             onClick={() => navigate("/dashboard")}
-            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
+            className="btn btn-secondary btn-md"
           >
-            Go Back to Dashboard
+            Dashboard
           </button>
         </div>
       </div>
     );
   }
 
-  const badge = isPass ? "Beginner Certified!" : "Try Again!";
+  const badgeText = isPass ? "Certified!" : "Requires revision";
 
   return (
-    <div className="p-6 max-w-3xl mx-auto text-gray-900 dark:text-gray-100">
-      <h2 className="text-3xl font-bold mb-4 text-center">Quiz Results</h2>
-      <div className="text-center mb-6">
-        <p className="text-lg font-semibold mb-2">
-          Score: <span className="text-blue-600">{score}</span> / {total} (
-          {percentage}%)
-        </p>
-        <p
-          className={`text-xl font-bold ${
-            isPass ? "text-green-600" : "text-red-500"
-          }`}
-        >
-          {badge}
-        </p>
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-brand-50 dark:bg-brand-900/20 mb-3 text-brand-600 dark:text-brand-400">
+          <Award size={24} />
+        </div>
+        <h1 className="page-title text-center">Quiz Results</h1>
+        <div className="mt-4 flex flex-col items-center gap-1.5">
+          <p className="text-xl font-bold text-gray-900 dark:text-white">
+            Score: <span className="text-brand-600 dark:text-brand-400">{score}</span> / {total} ({percentage}%)
+          </p>
+          <span className={`badge-brand ${isPass ? "badge-green" : "badge-red"}`}>
+            {badgeText}
+          </span>
+        </div>
       </div>
 
-      {/* ✅ Solutions List */}
-      {solutions.map((s, i) => (
-        <div
-          key={i}
-          className="mb-4 border rounded-lg p-4 bg-white dark:bg-gray-800 shadow"
-        >
-          <p className="font-semibold mb-2">
-            {i + 1}. {s.question}
-          </p>
-          <p
-            className={`mb-1 ${
-              s.correct ? "text-green-600" : "text-red-600"
-            }`}
+      {/* Solutions List */}
+      <div className="space-y-4 mb-8">
+        <h2 className="section-heading px-1">Review Questions</h2>
+        {solutions.map((s, i) => (
+          <div
+            key={i}
+            className="card card-p bg-white dark:bg-gray-800"
           >
-            Your Answer: {s.userAnswer || "No Answer"}
-          </p>
-          <p className="text-blue-600 font-medium">
-            Correct Answer: {s.answer}
-          </p>
-        </div>
-      ))}
+            <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+              {i + 1}. {s.question}
+            </p>
 
-      {/* ✅ Action Buttons */}
-      <div className="flex justify-center gap-4 mt-6">
+            <div className="space-y-1 text-xs">
+              <div className="flex items-center gap-1.5 font-medium">
+                {s.correct ? (
+                  <CheckCircle size={14} className="text-emerald-500 shrink-0" />
+                ) : (
+                  <XCircle size={14} className="text-red-500 shrink-0" />
+                )}
+                <span className={s.correct ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
+                  Your Answer: {s.userAnswer || "No Answer"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-brand-600 dark:text-brand-400 pl-5">
+                <span>Correct Answer: {s.answer}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-center gap-3">
         <button
           onClick={() => navigate("/quizzes")}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded shadow-md transition"
+          className="btn btn-primary btn-md"
         >
           Take Another Quiz
         </button>
         <button
           onClick={() => navigate("/dashboard")}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded shadow-md transition"
+          className="btn btn-secondary btn-md"
         >
-          Go Back to Dashboard
+          Go to Dashboard
+          <ChevronRight size={14} />
         </button>
       </div>
     </div>

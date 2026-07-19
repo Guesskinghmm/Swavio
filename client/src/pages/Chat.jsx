@@ -36,11 +36,7 @@ function FilePreviewMessage({ fileUrl }) {
     );
   if (["mp4", "webm", "ogg"].includes(ext))
     return (
-      <video
-        src={fullUrl}
-        controls
-        className="max-w-xs rounded-lg mb-1"
-      />
+      <video src={fullUrl} controls className="max-w-xs rounded-lg mb-1" />
     );
   return (
     <a
@@ -54,6 +50,51 @@ function FilePreviewMessage({ fileUrl }) {
     </a>
   );
 }
+
+// ── Phase 3: Jitsi link parser ──────────────────────────────────────────────
+// Matches https://8x8.vc/... URLs anywhere in a message string.
+const JITSI_REGEX = /(https:\/\/8x8\.vc\/[^\s]+)/g;
+
+function MessageContent({ text, isMine }) {
+  if (!text) return null;
+
+  const parts = text.split(JITSI_REGEX);
+  if (parts.length === 1) {
+    // No Jitsi link — render as plain text
+    return <p className="leading-relaxed">{text}</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {parts.map((part, i) => {
+        if (JITSI_REGEX.test(part)) {
+          // Reset lastIndex since we're reusing the regex
+          JITSI_REGEX.lastIndex = 0;
+          return (
+            <a
+              key={i}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-opacity hover:opacity-90 ${
+                isMine
+                  ? "bg-white/20 text-white border border-white/30"
+                  : "bg-brand-600 text-white"
+              }`}
+            >
+              <Video size={14} className="shrink-0" />
+              Join Video Call
+            </a>
+          );
+        }
+        // Reset lastIndex for reuse
+        JITSI_REGEX.lastIndex = 0;
+        return part ? <p key={i} className="leading-relaxed">{part}</p> : null;
+      })}
+    </div>
+  );
+}
+
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -267,7 +308,7 @@ export default function Chat() {
                 style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}
               >
                 {msg.fileUrl && <FilePreviewMessage fileUrl={msg.fileUrl} />}
-                {msg.text && <p className="leading-relaxed">{msg.text}</p>}
+                {msg.text && <MessageContent text={msg.text} isMine={isMine} />}
                 <p className={`text-xs mt-1.5 ${isMine ? "text-white/60" : "text-gray-400"}`}>
                   {formatTime(msg.createdAt)}
                 </p>

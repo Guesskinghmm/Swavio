@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Edit3, Trash2 } from "lucide-react";
+import { Edit3, Trash2, Star, Calendar, BookOpen, Award, CheckCircle, Mail, MapPin, X } from "lucide-react";
 
 export default function Profile() {
   const loggedInUserId = localStorage.getItem("userId");
@@ -10,9 +10,8 @@ export default function Profile() {
   const [formData, setFormData] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [rating, setRating] = useState(0);
 
-  // ✅ Fetch profile
+  // Fetch profile
   const fetchProfile = async () => {
     try {
       const res = await axios.get(
@@ -42,30 +41,29 @@ export default function Profile() {
       setUser(userData);
       setFormData(userData);
     } catch (err) {
-      console.error("❌ Error fetching profile:", err);
+      console.error("Error fetching profile:", err);
     }
   };
 
   useEffect(() => {
     if (loggedInUserId) fetchProfile();
-  }, [loggedInUserId]);
+  }, [loggedInUserId]); // eslint-disable-line
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // ✅ Image Selection & Preview
+  // Image Selection & Preview
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setSelectedFile(file);
 
-    // Preview Only
     const reader = new FileReader();
     reader.onloadend = () => setPreviewImage(reader.result);
     reader.readAsDataURL(file);
   };
 
-  // ✅ Save Profile
+  // Save Profile
   const handleSave = async () => {
     try {
       let res;
@@ -103,338 +101,369 @@ export default function Profile() {
       setShowSidebar(false);
       setSelectedFile(null);
       setPreviewImage(null);
-      alert("✅ Profile Updated!");
       fetchProfile();
     } catch (err) {
-      alert("❌ Failed to update profile!");
-      console.error(err);
+      console.error("Failed to update profile", err);
     }
   };
 
-  // ✅ Delete Profile Picture
+  // Delete Profile Picture
   const deleteProfilePicture = async () => {
     try {
       await axios.delete(
         `${process.env.REACT_APP_API_URL}/api/users/profile-picture/${loggedInUserId}`
       );
-      alert("🗑 Profile picture deleted!");
       fetchProfile();
       setPreviewImage(null);
       setSelectedFile(null);
     } catch (err) {
-      alert("❌ Failed to delete profile picture");
-      console.error(err);
+      console.error("Failed to delete picture", err);
     }
   };
 
   if (!user) {
     return (
-      <p className="text-center mt-10 text-gray-700 dark:text-gray-300">
-        Loading...
-      </p>
+      <div className="flex items-center justify-center py-24">
+        <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-5xl mx-auto p-6 text-gray-900 dark:text-gray-100 relative"
-    >
-      {/* Profile Header */}
-      <motion.div
-        whileHover={{ scale: 1.01 }}
-        className="bg-blue-50 dark:bg-gray-800 p-6 rounded-xl flex items-center gap-6 shadow mb-6 transition"
-      >
-        <img
-          src={previewImage || user.profilePicture || "/default-avatar.png"}
-          alt="Profile"
-          className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-600 shadow"
-        />
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Profile Header Card */}
+      <div className="card card-p flex flex-col sm:flex-row items-center gap-6 mb-6">
+        <div className="relative shrink-0">
+          <img
+            src={previewImage || user.profilePicture || "/default-avatar.png"}
+            alt="Profile"
+            className="w-24 h-24 rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm"
+          />
+        </div>
 
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{user.fullName}</h1>
-          <p className="text-gray-600 dark:text-gray-400">{user.email}</p>
+        <div className="flex-1 text-center sm:text-left min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            {user.fullName}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center sm:justify-start gap-1.5 mt-1">
+            <Mail size={14} /> {user.email}
+          </p>
 
-          {/* ⭐ Rating Display */}
-          <div className="flex items-center gap-2 mt-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <span
-                key={star}
-                style={{
-                  color: star <= Math.round(user.rating || 0) ? "gold" : "gray",
-                  fontSize: "22px",
-                }}
-              >
-                ★
-              </span>
-            ))}
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              ({user.rating?.toFixed(1) || 0}) • {user.ratingCount || 0} ratings
+          {user.location && (
+            <p className="text-sm text-gray-400 dark:text-gray-500 flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
+              <MapPin size={14} /> {user.location}
+            </p>
+          )}
+
+          {/* Rating */}
+          <div className="flex items-center justify-center sm:justify-start gap-1.5 mt-3">
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  size={16}
+                  className={
+                    star <= Math.round(user.rating || 0)
+                      ? "text-amber-400 fill-amber-400"
+                      : "text-gray-300 dark:text-gray-700"
+                  }
+                />
+              ))}
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              {user.rating?.toFixed(1) || "0.0"} ({user.ratingCount || 0} ratings)
             </span>
           </div>
 
-          {/* 🎖️ Badges */}
-          <div className="flex flex-wrap gap-3 mt-3">
-            <span className="bg-white dark:bg-gray-700 px-3 py-1 rounded-full shadow">
-              📅 {user.sessionsTaught} Taught | {user.sessionsLearned} Learned
+          {/* Stats Badges */}
+          <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-4">
+            <span className="badge-gray">
+              Taught: {user.sessionsTaught || 0} | Learned: {user.sessionsLearned || 0}
             </span>
 
             {user.badges?.map((badge, i) => (
-              <span
-                key={i}
-                className="bg-yellow-200 dark:bg-yellow-800 px-3 py-1 rounded-full shadow text-sm"
-              >
+              <span key={i} className="badge-yellow">
                 {badge}
               </span>
             ))}
 
             {user.achievementLevel && (
-              <span className="bg-green-200 dark:bg-green-800 px-3 py-1 rounded-full shadow text-sm">
-                🏅 Achievement: {user.achievementLevel}
+              <span className="badge-brand">
+                Level: {user.achievementLevel}
               </span>
             )}
           </div>
         </div>
-      </motion.div>
+
+        {/* Edit profile actions directly on header */}
+        <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
+          <button
+            onClick={() => setShowSidebar(true)}
+            className="btn btn-primary btn-md w-full"
+          >
+            <Edit3 size={15} /> Edit Profile
+          </button>
+          {user.profilePicture && (
+            <button
+              onClick={deleteProfilePicture}
+              className="btn btn-danger btn-md w-full"
+            >
+              <Trash2 size={15} /> Delete Picture
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* About Me */}
-      <motion.div
-        whileHover={{ scale: 1.01 }}
-        className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow mb-6 transition"
-      >
-        <h2 className="text-lg font-semibold mb-2">💭 About Me</h2>
-        <p className="text-gray-600 dark:text-gray-300">
-          {user.bio ||
-            "No bio available. Add your bio to help others get to know you!"}
+      <div className="card card-p mb-6">
+        <h2 className="section-heading mb-3 flex items-center gap-2">
+          <BookOpen size={16} className="text-brand-500" /> About me
+        </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+          {user.bio || "No bio available. Add your bio to help others get to know you!"}
         </p>
-      </motion.div>
+      </div>
 
-      {/* Skills Section */}
+      {/* Skills Grid */}
       <div className="grid md:grid-cols-2 gap-4 mb-6">
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          className="bg-blue-50 dark:bg-gray-800 p-5 rounded-xl transition"
-        >
-          <h3 className="font-semibold mb-2">🧑‍🏫 Skills I Can Teach</h3>
+        <div className="card card-p">
+          <h3 className="section-heading mb-3 flex items-center gap-2">
+            <Award size={16} className="text-brand-500" /> Skills I can teach
+          </h3>
           {user.skillsToTeach?.length ? (
-            <ul className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {user.skillsToTeach.map((skill, i) => (
-                <span
-                  key={i}
-                  className="bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full text-sm"
-                >
+                <span key={i} className="badge-brand">
                   {skill}
                 </span>
               ))}
-            </ul>
+            </div>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400">
-              No skills added yet.
-            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">No skills listed to teach.</p>
           )}
-        </motion.div>
+        </div>
 
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          className="bg-green-50 dark:bg-gray-800 p-5 rounded-xl transition"
-        >
-          <h3 className="font-semibold mb-2">🎓 Skills I Want to Learn</h3>
+        <div className="card card-p">
+          <h3 className="section-heading mb-3 flex items-center gap-2">
+            <CheckCircle size={16} className="text-emerald-500" /> Skills I want to learn
+          </h3>
           {user.skillsToLearn?.length ? (
-            <ul className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {user.skillsToLearn.map((skill, i) => (
-                <span
-                  key={i}
-                  className="bg-green-100 dark:bg-green-900 px-3 py-1 rounded-full text-sm"
-                >
+                <span key={i} className="badge-green">
                   {skill}
                 </span>
               ))}
-            </ul>
+            </div>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400">
-              No learning goals set.
-            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">No learning goals set yet.</p>
           )}
-        </motion.div>
+        </div>
       </div>
 
       {/* Availability */}
-      <motion.div
-        whileHover={{ scale: 1.01 }}
-        className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow mb-6 transition"
-      >
-        <h2 className="text-lg font-semibold mb-2">📅 Availability</h2>
-        <div className="text-gray-600 dark:text-gray-300">
-          {Array.isArray(user.availability) ? (
+      <div className="card card-p">
+        <h2 className="section-heading mb-3 flex items-center gap-2">
+          <Calendar size={16} className="text-amber-500" /> Availability
+        </h2>
+        <div className="flex flex-wrap gap-1.5">
+          {Array.isArray(user.availability) && user.availability.length > 0 ? (
             user.availability.map((slot, i) => (
-              <span
-                key={i}
-                className="inline-block bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded mr-1"
-              >
+              <span key={i} className="badge-gray">
                 {slot.day} ({slot.time})
               </span>
             ))
           ) : (
-            user.availability || "Not specified"
+            <span className="text-xs text-gray-400 dark:text-gray-500">Not specified</span>
           )}
         </div>
-      </motion.div>
-
-      {/* ✅ Bottom Buttons */}
-      <div className="flex justify-center gap-4 mt-8">
-        <button
-          onClick={() => setShowSidebar(true)}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow transition transform hover:scale-105"
-        >
-          <Edit3 className="w-4 h-4" /> Edit Profile
-        </button>
-        <button
-          onClick={deleteProfilePicture}
-          className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg shadow transition transform hover:scale-105"
-        >
-          <Trash2 className="w-4 h-4" /> Delete Picture
-        </button>
       </div>
 
-      {/* 🔹 Slide-in Sidebar Editor */}
+      {/* Slide-in Sidebar Editor */}
       <AnimatePresence>
         {showSidebar && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex justify-end z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
+          <>
+            <motion.div
+              className="fixed inset-0 bg-black/40 z-40"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSidebar(false)}
+            />
+
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="bg-white dark:bg-gray-900 w-96 p-6 h-full shadow-xl overflow-y-auto"
+              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              className="fixed top-0 right-0 w-full max-w-md h-full bg-white dark:bg-gray-900 z-50 flex flex-col border-l border-gray-200 dark:border-gray-800 shadow-float"
             >
-              <h2 className="text-xl font-semibold mb-4">✏ Edit Profile</h2>
-
-              {/* Profile Picture */}
-              <div className="mb-4">
-                <label className="block mb-1 font-semibold">Profile Picture</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full border p-2 rounded dark:bg-gray-800 dark:border-gray-700"
-                />
-                {previewImage && (
-                  <img
-                    src={previewImage}
-                    alt="Preview"
-                    className="w-20 h-20 rounded-full mt-2 object-cover"
-                  />
-                )}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Edit Profile
+                </h2>
+                <button
+                  onClick={() => setShowSidebar(false)}
+                  className="btn-ghost btn-sm rounded-lg"
+                  aria-label="Close editor"
+                >
+                  <X size={18} />
+                </button>
               </div>
 
-              {/* Full Name */}
-              <label className="block mb-1 font-semibold">Full Name</label>
-              <input
-                name="fullName"
-                value={formData.fullName || ""}
-                onChange={handleChange}
-                className="w-full mb-3 border p-2 rounded dark:bg-gray-800 dark:border-gray-700"
-              />
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {/* Profile Picture */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Profile Picture
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="input py-1.5"
+                  />
+                  {previewImage && (
+                    <img
+                      src={previewImage}
+                      alt="Preview"
+                      className="w-16 h-16 rounded-full mt-3 object-cover border border-gray-200 dark:border-gray-800"
+                    />
+                  )}
+                </div>
 
-              {/* Location */}
-              <label className="block mb-1 font-semibold">Location</label>
-              <input
-                name="location"
-                value={formData.location || ""}
-                onChange={handleChange}
-                className="w-full mb-3 border p-2 rounded dark:bg-gray-800 dark:border-gray-700"
-              />
+                {/* Full Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Full Name
+                  </label>
+                  <input
+                    name="fullName"
+                    value={formData.fullName || ""}
+                    onChange={handleChange}
+                    className="input"
+                  />
+                </div>
 
-              {/* Bio */}
-              <label className="block mb-1 font-semibold">Bio</label>
-              <textarea
-                name="bio"
-                value={formData.bio || ""}
-                onChange={handleChange}
-                className="w-full mb-3 border p-2 rounded dark:bg-gray-800 dark:border-gray-700"
-              />
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Location
+                  </label>
+                  <input
+                    name="location"
+                    value={formData.location || ""}
+                    onChange={handleChange}
+                    className="input"
+                  />
+                </div>
 
-              {/* Skills to Teach */}
-              <label className="block mb-1 font-semibold">Skills I Can Teach</label>
-              <input
-                name="skillsToTeach"
-                value={formData.skillsToTeach?.join(", ") || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    skillsToTeach: e.target.value
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  })
-                }
-                className="w-full mb-3 border p-2 rounded dark:bg-gray-800 dark:border-gray-700"
-              />
+                {/* Bio */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Bio
+                  </label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio || ""}
+                    onChange={handleChange}
+                    rows={3}
+                    className="input"
+                  />
+                </div>
 
-              {/* Skills to Learn */}
-              <label className="block mb-1 font-semibold">Skills I Want to Learn</label>
-              <input
-                name="skillsToLearn"
-                value={formData.skillsToLearn?.join(", ") || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    skillsToLearn: e.target.value
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  })
-                }
-                className="w-full mb-3 border p-2 rounded dark:bg-gray-800 dark:border-gray-700"
-              />
+                {/* Skills to Teach */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Skills I Can Teach (comma separated)
+                  </label>
+                  <input
+                    name="skillsToTeach"
+                    value={formData.skillsToTeach?.join(", ") || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        skillsToTeach: e.target.value
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    className="input"
+                  />
+                </div>
 
-              {/* Availability */}
-              <label className="block mb-1 font-semibold">Availability</label>
-              <input
-                name="availability"
-                value={formData.availability
-                  ?.map((slot) => `${slot.day} (${slot.time})`)
-                  .join(", ") || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    availability: e.target.value
-                      .split(",")
-                      .map((item) => {
-                        const [day, time] = item.trim().split(" ");
-                        return { day, time: time || "Flexible" };
-                      }),
-                  })
-                }
-                className="w-full mb-3 border p-2 rounded dark:bg-gray-800 dark:border-gray-700"
-              />
+                {/* Skills to Learn */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Skills I Want to Learn (comma separated)
+                  </label>
+                  <input
+                    name="skillsToLearn"
+                    value={formData.skillsToLearn?.join(", ") || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        skillsToLearn: e.target.value
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    className="input"
+                  />
+                </div>
 
-              {/* Save / Cancel Buttons */}
-              <div className="flex gap-2 mt-4">
+                {/* Availability */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Availability (e.g. "Mon-Fri Afternoon, Weekends Evening")
+                  </label>
+                  <input
+                    name="availability"
+                    value={formData.availability
+                      ?.map((slot) => `${slot.day} ${slot.time}`)
+                      .join(", ") || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        availability: e.target.value
+                          .split(",")
+                          .map((item) => {
+                            const trimmed = item.trim();
+                            if (!trimmed) return null;
+                            const parts = trimmed.split(" ");
+                            const day = parts[0] || "Flexible";
+                            const time = parts.slice(1).join(" ") || "Flexible";
+                            return { day, time };
+                          })
+                          .filter(Boolean),
+                      })
+                    }
+                    className="input"
+                  />
+                </div>
+              </div>
+
+              {/* Sidebar Action Buttons */}
+              <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex gap-3">
                 <button
                   onClick={handleSave}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex-1 transition transform hover:scale-105"
+                  className="btn btn-primary btn-md flex-1"
                 >
-                  💾 Save
+                  Save Changes
                 </button>
                 <button
                   onClick={() => setShowSidebar(false)}
-                  className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded flex-1 transition transform hover:scale-105"
+                  className="btn btn-secondary btn-md flex-1"
                 >
-                  ❌ Cancel
+                  Cancel
                 </button>
               </div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

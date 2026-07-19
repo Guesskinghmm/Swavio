@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { Sparkles } from "lucide-react"; // For medal animation effect
+import { Sparkles, Trophy, History } from "lucide-react";
 
 export default function Leaderboard() {
   const userId = localStorage.getItem("userId");
   const [leaders, setLeaders] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const rankBadges = ["🥇", "🥈", "🥉"];
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -16,7 +14,7 @@ export default function Leaderboard() {
         const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/quizzes/leaderboard`);
         setLeaders(res.data || []);
       } catch (err) {
-        console.error("❌ Failed to fetch leaderboard:", err);
+        console.error("Failed to fetch leaderboard:", err);
       } finally {
         setLoading(false);
       }
@@ -25,94 +23,131 @@ export default function Leaderboard() {
     fetchLeaderboard();
   }, [userId]);
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="flex justify-center items-center h-40">
-        <p className="text-gray-600 dark:text-gray-300 text-lg animate-pulse">
-          Loading Leaderboard...
-        </p>
+      <div className="flex items-center justify-center py-24">
+        <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
+  }
+
+  // Helper to determine rank styling
+  const getRankBadgeClass = (index) => {
+    if (index === 0) return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300";
+    if (index === 1) return "bg-gray-150 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300";
+    if (index === 2) return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300";
+    return "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400";
+  };
+
+  const getRankLabel = (index) => {
+    if (index === 0) return "1st";
+    if (index === 1) return "2nd";
+    if (index === 2) return "3rd";
+    return `${index + 1}th`;
+  };
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      <h2 className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-8 text-center">
-        🏆 Leaderboard
-      </h2>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="mb-8 text-center sm:text-left">
+        <div className="inline-flex items-center gap-2 mb-1">
+          <Trophy size={18} className="text-amber-500" />
+          <span className="text-xs font-semibold tracking-widest uppercase text-brand-500">
+            Rankings
+          </span>
+        </div>
+        <h1 className="page-title">Leaderboard</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Rankings of the top performers across all assessed skills.
+        </p>
+      </div>
 
-      <div className="overflow-x-auto rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm md:text-base">
-              <th className="py-3 px-4 rounded-tl-xl">Rank</th>
-              <th className="py-3 px-4">Name</th>
-              <th className="py-3 px-4">Score</th>
-              <th className="py-3 px-4">Quizzes Taken</th>
-              <th className="py-3 px-4 rounded-tr-xl">History</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leaders.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="text-center py-6 text-gray-500 dark:text-gray-400 italic"
+      <div className="card overflow-hidden">
+        {leaders.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+            <Trophy size={32} className="mx-auto mb-3 opacity-40" />
+            <p className="text-sm">No leaderboard data yet. Be the first to take a quiz!</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-150 dark:divide-gray-800">
+            {/* Table Header Row */}
+            <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3.5 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50/50 dark:bg-gray-900/20">
+              <div className="col-span-2">Rank</div>
+              <div className="col-span-4">Name</div>
+              <div className="col-span-2">Score</div>
+              <div className="col-span-2">Quizzes</div>
+              <div className="col-span-2 text-right">History</div>
+            </div>
+
+            {/* Leader Rows */}
+            {leaders.map((leader, i) => {
+              const isCurrentUser = leader.userId === userId;
+              return (
+                <div
+                  key={leader.userId}
+                  className={`grid grid-cols-12 gap-4 items-center px-6 py-4 transition-colors ${
+                    isCurrentUser
+                      ? "bg-brand-50/40 dark:bg-brand-900/10 font-semibold"
+                      : "hover:bg-gray-50/40 dark:hover:bg-gray-850/20"
+                  }`}
                 >
-                  No leaderboard data yet.
-                </td>
-              </tr>
-            ) : (
-              leaders.map((l, i) => {
-                const isCurrentUser = l.userId === userId;
-                return (
-                  <tr
-                    key={l.userId}
-                    className={`border-t border-gray-200 dark:border-gray-700 transition-all duration-200 ${
-                      isCurrentUser
-                        ? "bg-blue-100 dark:bg-blue-900/50 font-semibold"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-800"
-                    }`}
-                  >
-                    <td className="py-3 px-4 text-lg font-bold text-gray-800 dark:text-gray-100">
-                      {rankBadges[i] || i + 1}
-                    </td>
+                  {/* Rank */}
+                  <div className="col-span-3 sm:col-span-2 flex items-center">
+                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-xl text-xs font-bold ${getRankBadgeClass(i)}`}>
+                      {getRankLabel(i)}
+                    </span>
+                  </div>
 
-                    <td className="py-3 px-4 text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                  {/* Name */}
+                  <div className="col-span-9 sm:col-span-4 min-w-0">
+                    <div className="flex items-center gap-2">
                       <Link
-                        to={`/profile/${l.userId}`}
-                        className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                        to={`/profile/${leader.userId}`}
+                        className="text-sm font-semibold text-gray-950 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 truncate"
                       >
-                        {l.name || "Anonymous"}
+                        {leader.name || "Anonymous"}
                       </Link>
-
-                      {/* Animated medal for current user */}
                       {isCurrentUser && (
-                        <Sparkles className="text-yellow-400 animate-pulse w-5 h-5" />
+                        <Sparkles size={14} className="text-amber-400 shrink-0 animate-pulse" />
                       )}
-                    </td>
+                    </div>
+                  </div>
 
-                    <td className="py-3 px-4 text-gray-700 dark:text-gray-200">
-                      {l.score || 0}
-                    </td>
+                  {/* Score */}
+                  <div className="col-span-4 sm:col-span-2 flex flex-col sm:block mt-2 sm:mt-0">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 sm:hidden uppercase font-semibold">
+                      Score
+                    </span>
+                    <span className="text-sm font-bold text-brand-600 dark:text-brand-400">
+                      {leader.score || 0}
+                    </span>
+                  </div>
 
-                    <td className="py-3 px-4 text-gray-700 dark:text-gray-200">
-                      {l.quizzesTaken || 0}
-                    </td>
+                  {/* Quizzes Count */}
+                  <div className="col-span-4 sm:col-span-2 flex flex-col sm:block mt-2 sm:mt-0">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 sm:hidden uppercase font-semibold">
+                      Quizzes
+                    </span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {leader.quizzesTaken || 0}
+                    </span>
+                  </div>
 
-                    <td className="py-3 px-4">
-                      <Link
-                        to={`/quiz-history/${l.userId}`}
-                        className="text-purple-600 dark:text-purple-400 hover:underline"
-                      >
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                  {/* History Action */}
+                  <div className="col-span-4 sm:col-span-2 flex sm:justify-end mt-2 sm:mt-0">
+                    <Link
+                      to={`/quiz-history/${leader.userId}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:opacity-80 transition-opacity"
+                    >
+                      <History size={13} />
+                      View
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { User, Star, Calendar, BookOpen, GraduationCap } from "lucide-react";
+import { Star, Calendar, BookOpen, Award, CheckCircle, Mail, MapPin } from "lucide-react";
 
 export default function OtherProfile() {
   const { userId } = useParams();
@@ -39,119 +39,145 @@ export default function OtherProfile() {
         badges: res.data.badges,
         achievementLevel: res.data.achievementLevel,
       });
-
-      alert("Rating submitted!");
     } catch (err) {
       console.error(err);
-      alert("Failed to submit rating");
     }
   };
 
-  if (!user) return <p className="text-center mt-10">Loading...</p>;
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 text-gray-900 dark:text-gray-100">
-      {/* Profile Header */}
-      <div className="bg-blue-50 dark:bg-gray-800 p-6 rounded-xl flex items-center gap-6 shadow mb-6">
+    <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* Profile Header Card */}
+      <div className="card card-p flex flex-col sm:flex-row items-center gap-6 mb-6">
         <img
           src={user.profilePicture || "/default-avatar.png"}
           alt="Profile"
-          className="w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-600"
+          className="w-24 h-24 rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm"
         />
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <User className="w-5 h-5 text-blue-500" /> {user.fullName}
+        <div className="flex-1 text-center sm:text-left min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            {user.fullName}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">{user.email}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center justify-center sm:justify-start gap-1.5 mt-1">
+            <Mail size={14} /> {user.email}
+          </p>
 
-          {/* Rating */}
-          <div className="flex items-center gap-2 mt-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                onClick={() => submitRating(star)}
-                className={`w-5 h-5 cursor-pointer ${
-                  star <= (rating || Math.round(user.rating || 0))
-                    ? "text-yellow-400 fill-yellow-400"
-                    : "text-gray-400"
-                }`}
-              />
-            ))}
-            <span className="text-sm text-gray-600 dark:text-gray-300">
-              ({user.rating?.toFixed(1) || 0}) • {user.ratingCount || 0} ratings
+          {user.location && (
+            <p className="text-sm text-gray-400 dark:text-gray-500 flex items-center justify-center sm:justify-start gap-1.5 mt-0.5">
+              <MapPin size={14} /> {user.location}
+            </p>
+          )}
+
+          {/* Interactive Rating */}
+          <div className="flex items-center justify-center sm:justify-start gap-1.5 mt-3">
+            <div className="flex items-center gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  size={18}
+                  onClick={() => submitRating(star)}
+                  className={`cursor-pointer transition-colors ${
+                    star <= (rating || Math.round(user.rating || 0))
+                      ? "text-amber-400 fill-amber-400"
+                      : "text-gray-300 dark:text-gray-700 hover:text-amber-300"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              {user.rating?.toFixed(1) || "0.0"} ({user.ratingCount || 0} ratings)
             </span>
+          </div>
+
+          {/* Badges / Stats */}
+          <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-4">
+            <span className="badge-gray">
+              Taught: {user.sessionsTaught || 0} | Learned: {user.sessionsLearned || 0}
+            </span>
+
+            {user.badges?.map((badge, i) => (
+              <span key={i} className="badge-yellow">
+                {badge}
+              </span>
+            ))}
+
+            {user.achievementLevel && (
+              <span className="badge-brand">
+                Level: {user.achievementLevel}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* About Me */}
-      <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow mb-6">
-        <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-blue-500" /> About Me
+      <div className="card card-p mb-6">
+        <h2 className="section-heading mb-3 flex items-center gap-2">
+          <BookOpen size={16} className="text-brand-500" /> About me
         </h2>
-        <p>{user.bio || "No bio added yet"}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+          {user.bio || "No bio available."}
+        </p>
       </div>
 
-      {/* Skills Section */}
+      {/* Skills Grid */}
       <div className="grid md:grid-cols-2 gap-4 mb-6">
-        <div className="bg-blue-50 dark:bg-gray-800 p-5 rounded-xl">
-          <h3 className="font-semibold mb-2 flex items-center gap-2">
-            <User className="w-5 h-5 text-blue-500" /> Skills I Can Teach
+        <div className="card card-p">
+          <h3 className="section-heading mb-3 flex items-center gap-2">
+            <Award size={16} className="text-brand-500" /> Skills offered
           </h3>
           {user.skillsToTeach?.length ? (
-            <ul className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {user.skillsToTeach.map((skill, i) => (
-                <span
-                  key={i}
-                  className="bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full text-sm"
-                >
+                <span key={i} className="badge-brand">
                   {skill}
                 </span>
               ))}
-            </ul>
+            </div>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400">No skills added yet.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">No skills listed to teach.</p>
           )}
         </div>
 
-        <div className="bg-green-50 dark:bg-gray-800 p-5 rounded-xl">
-          <h3 className="font-semibold mb-2 flex items-center gap-2">
-            <GraduationCap className="w-5 h-5 text-green-500" /> Skills I Want to Learn
+        <div className="card card-p">
+          <h3 className="section-heading mb-3 flex items-center gap-2">
+            <CheckCircle size={16} className="text-emerald-500" /> Skills wanted
           </h3>
           {user.skillsToLearn?.length ? (
-            <ul className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {user.skillsToLearn.map((skill, i) => (
-                <span
-                  key={i}
-                  className="bg-green-100 dark:bg-green-900 px-3 py-1 rounded-full text-sm"
-                >
+                <span key={i} className="badge-green">
                   {skill}
                 </span>
               ))}
-            </ul>
+            </div>
           ) : (
-            <p className="text-gray-500 dark:text-gray-400">No learning goals set.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">No learning goals set.</p>
           )}
         </div>
       </div>
 
       {/* Availability */}
-      <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow mb-6">
-        <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-yellow-500" /> Availability
+      <div className="card card-p">
+        <h2 className="section-heading mb-3 flex items-center gap-2">
+          <Calendar size={16} className="text-amber-500" /> Availability
         </h2>
-        <div className="text-gray-600 dark:text-gray-300">
+        <div className="flex flex-wrap gap-1.5">
           {Array.isArray(user.availability) && user.availability.length > 0 ? (
             user.availability.map((slot, i) => (
-              <span
-                key={i}
-                className="inline-block bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded mr-1"
-              >
+              <span key={i} className="badge-gray">
                 {slot.day} ({slot.time})
               </span>
             ))
           ) : (
-            <p>Not specified</p>
+            <span className="text-xs text-gray-400 dark:text-gray-500">Not specified</span>
           )}
         </div>
       </div>
