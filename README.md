@@ -2,11 +2,9 @@
 
 A clean, minimalist full-stack platform enabling real-time messaging and peer-to-peer video conferencing over the web.
 
-[Live Demo](swavio.vercel.app) | [Backend API]((https://swavio-backend.onrender.com))
-
 ---
 
-## 🚀 Key Features
+##  Key Features
 
 *   **Real-Time Messaging:** Instantaneous, low-latency text chat powered by WebSockets.
 *   **Video Conferencing:** High-fidelity audio/video rooms using authenticated WebRTC signaling.
