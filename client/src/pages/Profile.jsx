@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import Cropper from "react-easy-crop";
+import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 import { motion, AnimatePresence } from "framer-motion";
 import { Edit3, Trash2, Star, Calendar, BookOpen, Award, CheckCircle, Mail, MapPin, X, Crop } from "lucide-react";
 
@@ -260,8 +261,8 @@ export default function Profile() {
     );
   }
 
-  // Avatar source: prefer previewImage (freshly cropped) → saved URL → default
-  const avatarSrc = previewImage || user.profilePicture || "/default-avatar.png";
+  // Avatar source: prefer previewImage (freshly cropped) → resolved saved URL → SVG fallback
+  const avatarSrc = previewImage ? previewImage : getAvatarUrl(user.profilePicture);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -280,6 +281,7 @@ export default function Profile() {
         <div className="relative shrink-0">
           <img
             src={avatarSrc}
+            onError={handleAvatarError}
             alt="Profile"
             className="w-24 h-24 rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm"
           />

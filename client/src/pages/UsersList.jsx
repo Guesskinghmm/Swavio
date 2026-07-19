@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { Users, Star } from "lucide-react";
+import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 
 export default function UsersList() {
   const [users, setUsers] = useState([]);
@@ -41,7 +42,8 @@ export default function UsersList() {
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col items-center text-center transition-transform transform hover:scale-[1.02] hover:shadow-xl"
             >
               <img
-                src={user.profilePicture || `/default-avatar.png`}
+                src={getAvatarUrl(user.profilePicture)}
+                onError={handleAvatarError}
                 alt={user.fullName}
                 className="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-gray-600 shadow"
               />

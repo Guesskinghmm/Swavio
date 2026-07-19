@@ -3,6 +3,7 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { User, Mail, Clock, Check, X, MessageCircle, Users } from "lucide-react";
+import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 
 export default function Connections() {
   const userId   = localStorage.getItem("userId");
@@ -152,7 +153,8 @@ export default function Connections() {
                       animate={{ opacity: 1, y: 0 }}
                     >
                       <img
-                        src={user.profilePicture || "/default-avatar.png"}
+                        src={getAvatarUrl(user.profilePicture)}
+                        onError={handleAvatarError}
                         alt={user.fullName}
                         className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-700 shrink-0"
                       />

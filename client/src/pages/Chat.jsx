@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { socket, SERVER_URL } from "../socket";
 import VideoCall from "./VideoCall";
+import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -373,7 +374,8 @@ export default function Chat() {
                   }`}
                 >
                   <img
-                    src={otherUser.profilePicture || "/default-avatar.png"}
+                    src={getAvatarUrl(otherUser.profilePicture)}
+                    onError={handleAvatarError}
                     alt={otherUser.fullName}
                     className="w-10 h-10 rounded-full object-cover border border-gray-150 dark:border-gray-700"
                   />
@@ -420,7 +422,8 @@ export default function Chat() {
                   <ArrowLeft size={18} />
                 </button>
                 <img
-                  src={activeChatUser.profilePicture || "/default-avatar.png"}
+                  src={getAvatarUrl(activeChatUser.profilePicture)}
+                  onError={handleAvatarError}
                   alt={activeChatUser.fullName}
                   className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                 />

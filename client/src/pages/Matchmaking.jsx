@@ -6,6 +6,7 @@ import {
   UserPlus, MessageCircle, MapPin, Calendar,
   Search, SlidersHorizontal, UserCheck,
 } from "lucide-react";
+import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 
 export default function Matchmaking() {
   const userId   = localStorage.getItem("userId");
@@ -147,7 +148,8 @@ export default function Matchmaking() {
                 transition={{ delay: i * 0.04 }}
               >
                 <img
-                  src={match.profilePicture || "/default-avatar.png"}
+                  src={getAvatarUrl(match.profilePicture)}
+                  onError={handleAvatarError}
                   alt={match.fullName}
                   className="w-14 h-14 rounded-full object-cover border border-gray-200 dark:border-gray-700 shrink-0"
                 />

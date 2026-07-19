@@ -17,6 +17,7 @@ import logo from "../assets/logo.png";
 import NotificationBell from "./NotificationBell";
 import axios from "axios";
 import { socket, SERVER_URL } from "../socket";
+import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 
 const NAV_LINKS = [
   { to: "/dashboard",          label: "Dashboard",   icon: LayoutDashboard },
@@ -106,19 +107,22 @@ export default function Navbar() {
 
               <ThemeToggle />
 
-              <button
-                onClick={() => setDrawerOpen(true)}
-                className="flex items-center gap-2 ml-1 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <img
-                  src={user?.profilePicture || "/default-avatar.png"}
-                  alt="Profile"
-                  className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-700"
-                />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 hidden sm:block">
-                  {user?.fullName?.split(" ")[0] || "Account"}
-                </span>
-              </button>
+              {user && (
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className="flex items-center gap-2 ml-1 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <img
+                    src={getAvatarUrl(user.profilePicture)}
+                    onError={handleAvatarError}
+                    alt="Profile"
+                    className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+                  />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200 hidden sm:block">
+                    {user?.fullName?.split(" ")[0] || "Account"}
+                  </span>
+                </button>
+              )}
             </>
           ) : (
             <>
@@ -166,7 +170,8 @@ export default function Navbar() {
                   className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 >
                   <img
-                    src={user?.profilePicture || "/default-avatar.png"}
+                    src={getAvatarUrl(user?.profilePicture)}
+                    onError={handleAvatarError}
                     alt="Profile"
                     className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700"
                   />

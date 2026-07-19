@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Star, Calendar, BookOpen, Award, CheckCircle, Mail, MapPin } from "lucide-react";
+import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 
 export default function OtherProfile() {
   const { userId } = useParams();
@@ -57,7 +58,8 @@ export default function OtherProfile() {
       {/* Profile Header Card */}
       <div className="card card-p flex flex-col sm:flex-row items-center gap-6 mb-6">
         <img
-          src={user.profilePicture || "/default-avatar.png"}
+          src={getAvatarUrl(user.profilePicture)}
+          onError={handleAvatarError}
           alt="Profile"
           className="w-24 h-24 rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm"
         />

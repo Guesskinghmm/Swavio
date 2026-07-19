@@ -1,5 +1,6 @@
 import React from "react";
 import { Calendar, Star } from "lucide-react";
+import { getAvatarUrl, handleAvatarError } from "../../utils/avatarUrl";
 
 export default function WelcomeBanner({ user }) {
   const firstName = user.fullName?.split(" ")[0] || "there";
@@ -11,17 +12,12 @@ export default function WelcomeBanner({ user }) {
   return (
     <div className="card card-p flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <div className="flex items-center gap-4">
-        {user.profilePicture ? (
-          <img
-            src={user.profilePicture}
-            alt={user.fullName}
-            className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-700"
-          />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-lg">
-            {user.fullName?.charAt(0).toUpperCase() || "U"}
-          </div>
-        )}
+        <img
+          src={getAvatarUrl(user.profilePicture)}
+          onError={handleAvatarError}
+          alt={user.fullName}
+          className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+        />
         <div>
           <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">{greeting}</p>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
