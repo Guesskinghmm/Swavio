@@ -29,6 +29,7 @@ export default function Sessions() {
   const [selectedSession, setSelectedSession] = useState(null);
   const [rating, setRating] = useState(5);
   const [feedback, setFeedback] = useState("");
+  const [saving, setSaving] = useState(false); // ✅ Prevents double-submit
 
   const fetchStudents = async () => {
     try {
@@ -63,6 +64,8 @@ export default function Sessions() {
       alert("⚠️ Please fill in all fields");
       return;
     }
+    if (saving) return; // ✅ Guard: block re-entry if already saving
+    setSaving(true);
 
     const payload = {
       teacherId: sessionType === "teaching" ? userId : formData.studentId,
@@ -83,6 +86,8 @@ export default function Sessions() {
     } catch (err) {
       console.error("❌ Error saving session", err);
       alert("❌ Failed to save session!");
+    } finally {
+      setSaving(false); // ✅ Always re-enable
     }
   };
 
@@ -206,9 +211,10 @@ export default function Sessions() {
           />
           <button
             onClick={handleSave}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full shadow transition w-full hover:scale-105"
+            disabled={saving}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full shadow transition w-full hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
-            {editId ? "💾 Update Session" : "Save Session"}
+            {saving ? "⏳ Saving..." : editId ? "💾 Update Session" : "✅ Save Session"}
           </button>
         </div>
       )}

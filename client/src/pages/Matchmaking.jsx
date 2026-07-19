@@ -10,15 +10,25 @@ import {
 export default function Matchmaking() {
   const userId   = localStorage.getItem("userId");
   const navigate = useNavigate();
-  const [matches,     setMatches]     = useState([]);
-  const [loading,     setLoading]     = useState(false);
-  const [connectedIds, setConnectedIds] = useState(new Set()); // Phase 2
+  const [matches,      setMatches]      = useState([]);
+  const [loading,      setLoading]      = useState(false);
+  const [currentUser,  setCurrentUser]  = useState(null); // ✅ For interest-overlap check
+  const [connectedIds, setConnectedIds] = useState(new Set());
   const [filters, setFilters] = useState({ intent: "teach", skill: "", availability: "" });
 
   const handleFilterChange = (e) =>
     setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  // Phase 2: fetch accepted connection IDs once on mount
+  // Fetch current user's profile for interest-overlap comparison
+  useEffect(() => {
+    if (!userId) return;
+    axios
+      .get(`${process.env.REACT_APP_API_URL}/api/users/${userId}`)
+      .then((res) => setCurrentUser(res.data))
+      .catch((err) => console.error("Failed to load current user profile:", err));
+  }, [userId]);
+
+  // Fetch accepted connection IDs once on mount
   useEffect(() => {
     if (!userId) return;
     axios
@@ -35,6 +45,17 @@ export default function Matchmaking() {
       })
       .catch((err) => console.error("Error fetching connections:", err));
   }, [userId]);
+
+  // ✅ True if currentUser's skills-to-learn overlap with the match's skills-to-teach
+  const hasInterestOverlap = (match) => {
+    if (!currentUser) return false;
+    const myLearnSet = new Set(
+      (currentUser.skillsToLearn || []).map((s) => s.toLowerCase().trim())
+    );
+    return (match.skillsToTeach || []).some((s) =>
+      myLearnSet.has(s.toLowerCase().trim())
+    );
+  };
 
   const sendConnectionRequest = async (otherUserId) => {
     try {
@@ -147,10 +168,10 @@ export default function Matchmaking() {
                       )}
                     </div>
 
-                    {/* ── Phase 2: Conditional action buttons ── */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* —— Action buttons with interest-match gate —— */}
+                    <div className="flex items-start gap-2 shrink-0">
                       {isConnected ? (
-                        /* Already connected — show Message only, hide Connect */
+                        /* Already connected — show Message only */
                         <button
                           onClick={() => navigate(`/chat?to=${match._id}`)}
                           className="btn btn-primary btn-sm"
@@ -158,14 +179,35 @@ export default function Matchmaking() {
                           <MessageCircle size={14} /> Message
                         </button>
                       ) : (
-                        /* Not yet connected — show Connect + disabled Message */
+                        /* Not yet connected — gate Connect on interest overlap */
                         <>
-                          <button
-                            onClick={() => sendConnectionRequest(match._id)}
-                            className="btn btn-primary btn-sm"
-                          >
-                            <UserPlus size={14} /> Connect
-                          </button>
+                          <div className="flex flex-col items-end gap-1">
+                            <button
+                              onClick={() =>
+                                hasInterestOverlap(match)
+                                  ? sendConnectionRequest(match._id)
+                                  : undefined
+                              }
+                              disabled={!hasInterestOverlap(match)}
+                              title={
+                                !hasInterestOverlap(match)
+                                  ? "Requires matching interests to connect"
+                                  : "Send connection request"
+                              }
+                              className={`btn btn-sm ${
+                                hasInterestOverlap(match)
+                                  ? "btn-primary"
+                                  : "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-70"
+                              }`}
+                            >
+                              <UserPlus size={14} /> Connect
+                            </button>
+                            {!hasInterestOverlap(match) && (
+                              <p className="text-[11px] text-amber-500 dark:text-amber-400 text-right max-w-[150px] leading-tight">
+                                Requires matching interests to connect.
+                              </p>
+                            )}
+                          </div>
                           <button
                             disabled
                             className="btn btn-sm bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed"

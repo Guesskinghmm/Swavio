@@ -1,20 +1,133 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
+import Cropper from "react-easy-crop";
 import { motion, AnimatePresence } from "framer-motion";
-import { Edit3, Trash2, Star, Calendar, BookOpen, Award, CheckCircle, Mail, MapPin, X } from "lucide-react";
+import { Edit3, Trash2, Star, Calendar, BookOpen, Award, CheckCircle, Mail, MapPin, X, Crop } from "lucide-react";
 
+// ─────────────────────────────────────────────
+// Helper: draws the cropped area onto a canvas and returns a Blob
+// ─────────────────────────────────────────────
+async function getCroppedBlob(imageSrc, croppedAreaPixels) {
+  const image = await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.addEventListener("load", () => resolve(img));
+    img.addEventListener("error", reject);
+    img.src = imageSrc;
+  });
+
+  const canvas = document.createElement("canvas");
+  const ctx    = canvas.getContext("2d");
+  canvas.width  = croppedAreaPixels.width;
+  canvas.height = croppedAreaPixels.height;
+
+  ctx.drawImage(
+    image,
+    croppedAreaPixels.x,
+    croppedAreaPixels.y,
+    croppedAreaPixels.width,
+    croppedAreaPixels.height,
+    0, 0,
+    croppedAreaPixels.width,
+    croppedAreaPixels.height
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.92);
+  });
+}
+
+// ─────────────────────────────────────────────
+// ImageCropModal
+// ─────────────────────────────────────────────
+function ImageCropModal({ src, onConfirm, onCancel }) {
+  const [crop,              setCrop]              = useState({ x: 0, y: 0 });
+  const [zoom,              setZoom]              = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  const onCropComplete = useCallback((_, pxArea) => {
+    setCroppedAreaPixels(pxArea);
+  }, []);
+
+  const handleConfirm = async () => {
+    if (!croppedAreaPixels) return;
+    const blob = await getCroppedBlob(src, croppedAreaPixels);
+    onConfirm(blob);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800">
+          <span className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
+            <Crop size={16} className="text-brand-500" />
+            Crop your photo
+          </span>
+          <button onClick={onCancel} className="btn-ghost btn-sm rounded-lg" aria-label="Close">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Cropper area */}
+        <div className="relative w-full bg-gray-800" style={{ height: 320 }}>
+          <Cropper
+            image={src}
+            crop={crop}
+            zoom={zoom}
+            aspect={1}
+            cropShape="round"
+            showGrid={false}
+            onCropChange={setCrop}
+            onZoomChange={setZoom}
+            onCropComplete={onCropComplete}
+          />
+        </div>
+
+        {/* Zoom slider */}
+        <div className="px-5 py-3 flex items-center gap-3">
+          <span className="text-xs text-gray-500 dark:text-gray-400 w-10">Zoom</span>
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.05}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            className="flex-1 accent-brand-500"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="px-5 py-4 border-t border-gray-200 dark:border-gray-800 flex gap-3">
+          <button onClick={handleConfirm} className="btn btn-primary btn-md flex-1">
+            ✂️ Crop &amp; Use
+          </button>
+          <button onClick={onCancel} className="btn btn-secondary btn-md flex-1">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Profile (main component)
+// ─────────────────────────────────────────────
 export default function Profile() {
   const loggedInUserId = localStorage.getItem("userId");
-  const [user, setUser] = useState(null);
-  const [showSidebar, setShowSidebar] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [previewImage, setPreviewImage] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [user,         setUser]         = useState(null);
+  const [showSidebar,  setShowSidebar]  = useState(false);
+  const [formData,     setFormData]     = useState({});
+  const [previewImage, setPreviewImage] = useState(null);   // base64 preview shown in sidebar
+  const [selectedFile, setSelectedFile] = useState(null);   // cropped Blob to upload
+  const [cropSrc,      setCropSrc]      = useState(null);   // original data-URL for cropper
+  const [showCropper,  setShowCropper]  = useState(false);
 
-  // Fetch profile
+  // ── Fetch profile ──────────────────────────
   const fetchProfile = async () => {
     try {
-      const res = await axios.get(
+      const res      = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/users/profile/${loggedInUserId}`
       );
       const userData = res.data;
@@ -22,21 +135,13 @@ export default function Profile() {
       // Ensure arrays are always arrays
       userData.skillsToTeach = Array.isArray(userData.skillsToTeach)
         ? userData.skillsToTeach
-        : userData.skillsToTeach
-        ? [userData.skillsToTeach]
-        : [];
-
+        : userData.skillsToTeach ? [userData.skillsToTeach] : [];
       userData.skillsToLearn = Array.isArray(userData.skillsToLearn)
         ? userData.skillsToLearn
-        : userData.skillsToLearn
-        ? [userData.skillsToLearn]
-        : [];
-
-      userData.availability = Array.isArray(userData.availability)
+        : userData.skillsToLearn ? [userData.skillsToLearn] : [];
+      userData.availability  = Array.isArray(userData.availability)
         ? userData.availability
-        : userData.availability
-        ? [userData.availability]
-        : [];
+        : userData.availability  ? [userData.availability]  : [];
 
       setUser(userData);
       setFormData(userData);
@@ -52,18 +157,41 @@ export default function Profile() {
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  // Image Selection & Preview
+  // ── Step 1: User picks a file → open cropper ──
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setSelectedFile(file);
 
     const reader = new FileReader();
-    reader.onloadend = () => setPreviewImage(reader.result);
+    reader.onloadend = () => {
+      setCropSrc(reader.result);   // pass original data-URL to cropper
+      setShowCropper(true);
+    };
     reader.readAsDataURL(file);
+    // Reset file input so the same file can be re-selected
+    e.target.value = "";
   };
 
-  // Save Profile
+  // ── Step 2: User confirms crop → receive Blob ──
+  const handleCropConfirm = (blob) => {
+    setShowCropper(false);
+    setCropSrc(null);
+
+    // Turn the Blob into a File so FormData accepts it
+    const file = new File([blob], "profile-crop.jpg", { type: "image/jpeg" });
+    setSelectedFile(file);
+
+    // Show preview in the sidebar
+    const previewUrl = URL.createObjectURL(blob);
+    setPreviewImage(previewUrl);
+  };
+
+  const handleCropCancel = () => {
+    setShowCropper(false);
+    setCropSrc(null);
+  };
+
+  // ── Save Profile ───────────────────────────
   const handleSave = async () => {
     try {
       let res;
@@ -90,24 +218,27 @@ export default function Profile() {
             payload[key] = JSON.stringify(payload[key]);
           }
         });
-
         res = await axios.put(
           `${process.env.REACT_APP_API_URL}/api/users/${loggedInUserId}`,
           payload
         );
       }
 
+      // ✅ FIX: immediately apply the returned user data (includes new profilePicture URL)
       setUser(res.data);
-      setShowSidebar(false);
-      setSelectedFile(null);
+      // ✅ FIX: clear preview so avatar falls through to user.profilePicture
       setPreviewImage(null);
+      setSelectedFile(null);
+      setCropSrc(null);
+      setShowSidebar(false);
+      // Silently re-sync badges/counts in the background
       fetchProfile();
     } catch (err) {
       console.error("Failed to update profile", err);
     }
   };
 
-  // Delete Profile Picture
+  // ── Delete Profile Picture ─────────────────
   const deleteProfilePicture = async () => {
     try {
       await axios.delete(
@@ -129,13 +260,26 @@ export default function Profile() {
     );
   }
 
+  // Avatar source: prefer previewImage (freshly cropped) → saved URL → default
+  const avatarSrc = previewImage || user.profilePicture || "/default-avatar.png";
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+
+      {/* ── Crop Modal (renders above everything) ── */}
+      {showCropper && cropSrc && (
+        <ImageCropModal
+          src={cropSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={handleCropCancel}
+        />
+      )}
+
       {/* Profile Header Card */}
       <div className="card card-p flex flex-col sm:flex-row items-center gap-6 mb-6">
         <div className="relative shrink-0">
           <img
-            src={previewImage || user.profilePicture || "/default-avatar.png"}
+            src={avatarSrc}
             alt="Profile"
             className="w-24 h-24 rounded-full object-cover border border-gray-200 dark:border-gray-700 shadow-sm"
           />
@@ -180,22 +324,16 @@ export default function Profile() {
             <span className="badge-gray">
               Taught: {user.sessionsTaught || 0} | Learned: {user.sessionsLearned || 0}
             </span>
-
             {user.badges?.map((badge, i) => (
-              <span key={i} className="badge-yellow">
-                {badge}
-              </span>
+              <span key={i} className="badge-yellow">{badge}</span>
             ))}
-
             {user.achievementLevel && (
-              <span className="badge-brand">
-                Level: {user.achievementLevel}
-              </span>
+              <span className="badge-brand">Level: {user.achievementLevel}</span>
             )}
           </div>
         </div>
 
-        {/* Edit profile actions directly on header */}
+        {/* Edit / Delete buttons */}
         <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
           <button
             onClick={() => setShowSidebar(true)}
@@ -204,10 +342,7 @@ export default function Profile() {
             <Edit3 size={15} /> Edit Profile
           </button>
           {user.profilePicture && (
-            <button
-              onClick={deleteProfilePicture}
-              className="btn btn-danger btn-md w-full"
-            >
+            <button onClick={deleteProfilePicture} className="btn btn-danger btn-md w-full">
               <Trash2 size={15} /> Delete Picture
             </button>
           )}
@@ -233,9 +368,7 @@ export default function Profile() {
           {user.skillsToTeach?.length ? (
             <div className="flex flex-wrap gap-1.5">
               {user.skillsToTeach.map((skill, i) => (
-                <span key={i} className="badge-brand">
-                  {skill}
-                </span>
+                <span key={i} className="badge-brand">{skill}</span>
               ))}
             </div>
           ) : (
@@ -250,9 +383,7 @@ export default function Profile() {
           {user.skillsToLearn?.length ? (
             <div className="flex flex-wrap gap-1.5">
               {user.skillsToLearn.map((skill, i) => (
-                <span key={i} className="badge-green">
-                  {skill}
-                </span>
+                <span key={i} className="badge-green">{skill}</span>
               ))}
             </div>
           ) : (
@@ -279,7 +410,7 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Slide-in Sidebar Editor */}
+      {/* ── Slide-in Sidebar Editor ── */}
       <AnimatePresence>
         {showSidebar && (
           <>
@@ -312,6 +443,7 @@ export default function Profile() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
+
                 {/* Profile Picture */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -323,12 +455,18 @@ export default function Profile() {
                     onChange={handleImageChange}
                     className="input py-1.5"
                   />
+                  {/* Preview of the cropped result */}
                   {previewImage && (
-                    <img
-                      src={previewImage}
-                      alt="Preview"
-                      className="w-16 h-16 rounded-full mt-3 object-cover border border-gray-200 dark:border-gray-800"
-                    />
+                    <div className="mt-3 flex items-center gap-3">
+                      <img
+                        src={previewImage}
+                        alt="Cropped Preview"
+                        className="w-16 h-16 rounded-full object-cover border border-gray-200 dark:border-gray-800"
+                      />
+                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                        ✅ Cropped & ready to save
+                      </span>
+                    </div>
                   )}
                 </div>
 
@@ -421,9 +559,11 @@ export default function Profile() {
                   </label>
                   <input
                     name="availability"
-                    value={formData.availability
-                      ?.map((slot) => `${slot.day} ${slot.time}`)
-                      .join(", ") || ""}
+                    value={
+                      formData.availability
+                        ?.map((slot) => `${slot.day} ${slot.time}`)
+                        .join(", ") || ""
+                    }
                     onChange={(e) =>
                       setFormData({
                         ...formData,
@@ -433,8 +573,8 @@ export default function Profile() {
                             const trimmed = item.trim();
                             if (!trimmed) return null;
                             const parts = trimmed.split(" ");
-                            const day = parts[0] || "Flexible";
-                            const time = parts.slice(1).join(" ") || "Flexible";
+                            const day   = parts[0] || "Flexible";
+                            const time  = parts.slice(1).join(" ") || "Flexible";
                             return { day, time };
                           })
                           .filter(Boolean),
@@ -447,10 +587,7 @@ export default function Profile() {
 
               {/* Sidebar Action Buttons */}
               <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex gap-3">
-                <button
-                  onClick={handleSave}
-                  className="btn btn-primary btn-md flex-1"
-                >
+                <button onClick={handleSave} className="btn btn-primary btn-md flex-1">
                   Save Changes
                 </button>
                 <button

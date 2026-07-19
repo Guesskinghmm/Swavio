@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Loader2, CheckCircle, Brain, ArrowRight } from "lucide-react";
@@ -13,23 +14,31 @@ export default function QuizAttempt() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_URL}/api/quizzes/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ skill }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    console.log(`📚 QuizAttempt: fetching questions for skill = "${skill}"`);
+    axios
+      .post(`${process.env.REACT_APP_API_URL}/api/quizzes/generate`, { skill })
+      .then(({ data }) => {
         if (Array.isArray(data) && data.length > 0) {
+          console.log(`✅ Quiz loaded: ${data.length} questions`);
           setQuestions(data);
           setAnswers(Array(data.length).fill(""));
         } else {
-          setError("No questions available for this skill.");
+          console.warn("⚠️ Quiz returned empty array. Ollama may be offline or returned bad JSON.");
+          setError("No questions available for this skill. The AI service may be offline.");
         }
         setLoading(false);
       })
-      .catch(() => {
-        setError("Server not responding. Please try again later.");
+      .catch((err) => {
+        const status  = err?.response?.status;
+        const message = err?.response?.data?.error || err?.message || "Unknown error";
+        console.error(`❌ Quiz fetch failed (HTTP ${status || "no response"}):`, message, err);
+        if (status === 503) {
+          setError("AI quiz service is currently offline. Please ensure Ollama is running.");
+        } else if (!err.response) {
+          setError("Cannot reach the server. Check your network connection.");
+        } else {
+          setError(`Failed to load quiz: ${message}`);
+        }
         setLoading(false);
       });
   }, [skill]);
@@ -42,19 +51,18 @@ export default function QuizAttempt() {
 
   const handleSubmit = () => {
     setSubmitting(true);
-
-    fetch(`${process.env.REACT_APP_API_URL}/api/quizzes/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    axios
+      .post(`${process.env.REACT_APP_API_URL}/api/quizzes/submit`, {
         userId: localStorage.getItem("userId"),
         skill,
         questions,
         answers,
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => navigate("/quizzes/result", { state: data }))
+      })
+      .then(({ data }) => navigate("/quizzes/result", { state: data }))
+      .catch((err) => {
+        console.error("❌ Quiz submit failed:", err?.response?.data || err?.message);
+        alert("Failed to submit quiz. Please try again.");
+      })
       .finally(() => setSubmitting(false));
   };
 

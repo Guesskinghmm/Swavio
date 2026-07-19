@@ -1,7 +1,10 @@
 import { Ollama } from "ollama";
 import { jsonrepair } from "jsonrepair";
 
-const ollama = new Ollama({ host: "http://127.0.0.1:11500" });
+// ✅ Read host from env — default is Ollama's standard port 11434
+const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://127.0.0.1:11434";
+const ollama = new Ollama({ host: OLLAMA_HOST });
+console.log(`🤖 Ollama client initialised at ${OLLAMA_HOST}`);
 
 import QuizResult from "../models/QuizResult.js";
 import User from "../models/User.js";
@@ -51,8 +54,13 @@ Respond ONLY in JSON (no extra text), in this format:
 
     return res.json(quizData);
   } catch (error) {
-    console.error("❌ Quiz Generation Error:", error);
-    res.status(500).json({ error: "Server error" });
+    const code = error?.cause?.code || error?.code;
+    console.error("❌ Quiz Generation Error:", error?.message || error);
+    if (code === "ECONNREFUSED" || code === "ENOTFOUND") {
+      console.error(`❌ Ollama is not reachable at ${OLLAMA_HOST}. Is it running?`);
+      return res.status(503).json({ error: `AI service unavailable. Ollama is not running at ${OLLAMA_HOST}.` });
+    }
+    res.status(500).json({ error: "Server error generating quiz" });
   }
 };
 
