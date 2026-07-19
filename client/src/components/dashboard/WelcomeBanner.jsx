@@ -1,53 +1,50 @@
 import React from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Star } from "lucide-react";
 
 export default function WelcomeBanner({ user }) {
-  // Extract initials from full name
-  const initials = user.fullName
-    ? user.fullName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-    : "U";
+  const firstName = user.fullName?.split(" ")[0] || "there";
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" :
+    hour < 17 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-xl text-white shadow-lg mb-4">
-      
-      {/* Decorative Gradient Circles */}
-      <div className="absolute top-0 right-0 w-40 h-40 bg-purple-400/30 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/20 rounded-full blur-2xl"></div>
-
-      <div className="relative flex items-center justify-between">
-        {/* Profile + Text */}
-        <div className="flex items-center space-x-4">
-          <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-xl font-bold shadow-md">
-            {initials}
+    <div className="card card-p flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+      <div className="flex items-center gap-4">
+        {user.profilePicture ? (
+          <img
+            src={user.profilePicture}
+            alt={user.fullName}
+            className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+          />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-lg">
+            {user.fullName?.charAt(0).toUpperCase() || "U"}
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-wide">
-              Welcome back, {user.fullName} 👋
-            </h1>
-            <p className="text-sm text-white/80 mt-1">
-              Keep learning and growing today!
-            </p>
-          </div>
+        )}
+        <div>
+          <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">{greeting}</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+            {firstName}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            Here&apos;s what&apos;s happening with your account today.
+          </p>
         </div>
+      </div>
 
-        {/* Date + Rating */}
-        <div className="text-right flex flex-col items-end">
-          <div className="flex items-center text-sm opacity-90 mb-2">
-            <Calendar size={16} className="mr-1" />
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
+      <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500 shrink-0">
+        {user.rating !== undefined && (
+          <div className="flex items-center gap-1.5 badge-yellow px-2.5 py-1 rounded-full">
+            <Star size={12} />
+            <span className="font-medium">{user.rating} Rating</span>
           </div>
-          <span className="text-xs bg-white text-purple-700 px-2 py-1 rounded-full dark:bg-gray-200 dark:text-purple-800 font-semibold shadow-sm">
-            ⭐ {user.rating || 0} Rating
-          </span>
+        )}
+        <div className="flex items-center gap-1.5">
+          <Calendar size={13} />
+          {new Date().toLocaleDateString("en-US", {
+            weekday: "short", month: "short", day: "numeric",
+          })}
         </div>
       </div>
     </div>

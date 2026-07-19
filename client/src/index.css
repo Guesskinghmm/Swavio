@@ -1,31 +1,170 @@
+/* ── Google Fonts (must be first) ── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Pacifico&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── CSS Custom Properties ── */
+:root {
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Surfaces */
+  --surface:        #ffffff;
+  --surface-muted:  #f9fafb;
+  --surface-subtle: #f3f4f6;
+  --surface-border: #e5e7eb;
+
+  /* Brand */
+  --brand-50:  #eef2ff;
+  --brand-100: #e0e7ff;
+  --brand-500: #6366f1;
+  --brand-600: #4f46e5;
+  --brand-700: #4338ca;
+
+  /* Text */
+  --text-primary:   #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary:  #9ca3af;
+
+  /* Shadows */
+  --shadow-card:  0 1px 3px 0 rgba(0,0,0,0.08), 0 1px 2px -1px rgba(0,0,0,0.06);
+  --shadow-hover: 0 4px 12px 0 rgba(0,0,0,0.10), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-float: 0 8px 30px rgba(0,0,0,0.12);
+
+  /* Navbar height for layout calculations */
+  --navbar-height: 64px;
+}
+
+.dark {
+  --surface:        #111827;
+  --surface-muted:  #1f2937;
+  --surface-subtle: #374151;
+  --surface-border: #374151;
+
+  --text-primary:   #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-tertiary:  #6b7280;
+
+  --shadow-card:  0 1px 3px 0 rgba(0,0,0,0.3), 0 1px 2px -1px rgba(0,0,0,0.2);
+  --shadow-hover: 0 4px 12px 0 rgba(0,0,0,0.35), 0 2px 4px -1px rgba(0,0,0,0.2);
+}
+
+/* ── Base Typography ── */
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.011em;
+}
+
 body {
-  @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-white;
+  background-color: var(--surface-muted);
+  color: var(--text-primary);
 }
+
+/* ── Reusable Component Classes ── */
+@layer components {
+
+  /* Card */
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-hover);
+  }
+  .card-p {
+    @apply p-5 sm:p-6;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-150 cursor-pointer select-none;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  .btn-sm   { @apply text-sm px-3 py-1.5; }
+  .btn-md   { @apply text-sm px-4 py-2; }
+  .btn-lg   { @apply text-base px-5 py-2.5; }
+
+  .btn-primary {
+    @apply btn bg-brand-600 hover:bg-brand-700 text-white focus:ring-brand-500;
+  }
+  .btn-secondary {
+    @apply btn bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 focus:ring-gray-400;
+  }
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 focus:ring-gray-400;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 hover:bg-red-700 text-white focus:ring-red-500;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-4 py-2.5 text-sm rounded-xl border border-gray-300 dark:border-gray-600;
+    @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
+    @apply placeholder-gray-400 dark:placeholder-gray-500;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  /* Headings */
+  .section-heading {
+    @apply text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight;
+  }
+  .page-title {
+    @apply text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight;
+  }
+
+  /* Badge / Pill */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  /* Note: dark: variants cannot be used inside @apply in Tailwind v3.
+     Dark mode overrides are applied via plain CSS below. */
+  .badge-brand  { @apply badge bg-brand-100  text-brand-700; }
+  .badge-green  { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-yellow { @apply badge bg-amber-100  text-amber-700; }
+  .badge-red    { @apply badge bg-red-100    text-red-700; }
+  .badge-gray   { @apply badge bg-gray-100   text-gray-600; }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-gray-200 dark:border-gray-700;
+  }
+}
+
+/* ── Animations ── */
 @keyframes fade-in-left {
-  0% { opacity: 0; transform: translateX(-20px); }
-  100% { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
-
 @keyframes fade-in-right {
-  0% { opacity: 0; transform: translateX(20px); }
-  100% { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-in-left {
-  animation: fade-in-left 0.8s ease-out both;
-}
+.animate-fade-in-left  { animation: fade-in-left  0.5s ease-out both; }
+.animate-fade-in-right { animation: fade-in-right 0.5s ease-out both; }
+.animate-fade-in-up    { animation: fade-in-up    0.4s ease-out both; }
 
-.animate-fade-in-right {
-  animation: fade-in-right 0.8s ease-out both;
-}
-.input {
-  @apply w-full p-2 border rounded-md text-sm;
-}
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+.dark ::-webkit-scrollbar-thumb { background: #4b5563; }
 
-.btn {
-  @apply px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition;
-}
+/* ── Badge dark mode overrides (can't use @apply dark: inside @layer) ── */
+.dark .badge-brand  { background-color: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+.dark .badge-green  { background-color: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+.dark .badge-yellow { background-color: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+.dark .badge-red    { background-color: rgba(239, 68, 68, 0.2);  color: #fca5a5; }
+.dark .badge-gray   { background-color: rgba(75, 85, 99, 0.4);   color: #d1d5db; }
+

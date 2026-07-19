@@ -22,7 +22,7 @@ export default function NotificationBell({ userId, socket }) {
   // Socket real-time notifications
   useEffect(() => {
     if (!socket || !userId) return;
-    socket.emit("join", userId);
+    // Note: socket.emit("join") is handled once in App.jsx
 
     socket.on("notification", (newNotif) => {
       const notifWithLink = { ...newNotif, link: newNotif.link || "/notifications" };
@@ -31,6 +31,7 @@ export default function NotificationBell({ userId, socket }) {
 
     return () => socket.off("notification");
   }, [socket, userId]);
+
 
   // ✅ Outside click to close dropdown
   useEffect(() => {

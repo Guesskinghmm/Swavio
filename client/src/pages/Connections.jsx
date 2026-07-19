@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Mail, Clock, Check, X, MessageCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { User, Mail, Clock, Check, X, MessageCircle, Users } from "lucide-react";
 
 export default function Connections() {
-  const userId = localStorage.getItem("userId");
+  const userId   = localStorage.getItem("userId");
+  const navigate = useNavigate();
   const [pendingReceived, setPendingReceived] = useState([]);
-  const [pendingSent, setPendingSent] = useState([]);
-  const [accepted, setAccepted] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("received");
+  const [pendingSent,     setPendingSent]     = useState([]);
+  const [accepted,        setAccepted]        = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [activeTab,       setActiveTab]       = useState("received");
 
   const fetchConnections = async () => {
     try {
@@ -19,8 +21,8 @@ export default function Connections() {
         axios.get(`${process.env.REACT_APP_API_URL}/api/connection/accepted/${userId}`),
       ]);
       setPendingReceived(pendingRes.data || []);
-      setPendingSent(sentRes.data || []);
-      setAccepted(acceptedRes.data || []);
+      setPendingSent(sentRes.data     || []);
+      setAccepted(acceptedRes.data    || []);
     } catch (err) {
       console.error("Error fetching connections", err);
     } finally {
@@ -28,181 +30,194 @@ export default function Connections() {
     }
   };
 
-  useEffect(() => {
-    fetchConnections();
-  }, []);
+  useEffect(() => { fetchConnections(); }, []); // eslint-disable-line
 
   const handleAccept = async (id) => {
     try {
       await axios.put(`${process.env.REACT_APP_API_URL}/api/connection/accept/${id}`);
       fetchConnections();
-    } catch (err) {
-      console.error("Failed to accept request:", err);
-    }
+    } catch (err) { console.error("Failed to accept:", err); }
   };
 
   const handleReject = async (id) => {
     try {
       await axios.delete(`${process.env.REACT_APP_API_URL}/api/connection/${id}`);
       fetchConnections();
-    } catch (err) {
-      console.error("Failed to reject/cancel request:", err);
-    }
+    } catch (err) { console.error("Failed to reject:", err); }
   };
 
-  const renderAvailability = (availability) => {
-    if (!availability || availability.length === 0) {
-      return (
-        <span className="text-gray-500 text-xs flex items-center gap-1">
-          <Clock size={14} /> No availability
-        </span>
-      );
-    }
-    return availability.map((slot, idx) => (
-      <span
-        key={`${slot.day}-${slot.time}-${idx}`}
-        className="inline-block bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 px-2 py-0.5 rounded-full mr-1 text-xs"
-      >
-        {slot.day} ({slot.time})
-      </span>
-    ));
-  };
+  const TABS = [
+    { key: "received", label: "Received",  count: pendingReceived.length },
+    { key: "sent",     label: "Sent",      count: pendingSent.length },
+    { key: "accepted", label: "Connected", count: accepted.length },
+  ];
 
-  const Card = ({ user, actions }) => (
-    <motion.div
-      className="backdrop-blur-md bg-white/70 dark:bg-gray-800/70 rounded-2xl shadow-lg border border-gray-200/30 dark:border-gray-700/50 p-5 flex justify-between items-center hover:shadow-2xl hover:scale-[1.01] transition-all"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.01 }}
-    >
-      <div className="flex items-center gap-4">
-        <img
-          src={user.profilePicture || "/default-avatar.png"}
-          alt="User"
-          className="w-16 h-16 rounded-full border-2 border-indigo-400 object-cover shadow-sm"
-        />
-        <div>
-          <p className="font-semibold text-lg text-gray-800 dark:text-gray-200 flex items-center gap-1">
-            <User size={18} /> {user.fullName || "Unnamed User"}
-          </p>
-          <p className="text-sm text-gray-500 flex items-center gap-1">
-            <Mail size={14} /> {user.email}
-          </p>
-          <div className="mt-2">{renderAvailability(user.availability)}</div>
-        </div>
+  const getUser = (conn, type) =>
+    type === "received"
+      ? conn.user1
+      : type === "sent"
+      ? conn.user2
+      : conn.user1._id === userId
+      ? conn.user2
+      : conn.user1;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
-      {actions}
-    </motion.div>
-  );
-
-  const TabContent = ({ data, type }) => (
-    <AnimatePresence>
-      {data.length === 0 ? (
-        <motion.p
-          className="text-center text-gray-500 dark:text-gray-400 mt-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          {type === "received"
-            ? "No pending requests."
-            : type === "sent"
-            ? "No sent requests."
-            : "No accepted connections yet."}
-        </motion.p>
-      ) : (
-        <motion.div
-          className="grid sm:grid-cols-2 gap-5 mt-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          {data.map((conn) => {
-            const user =
-              type === "received"
-                ? conn.user1
-                : type === "sent"
-                ? conn.user2
-                : conn.user1._id === userId
-                ? conn.user2
-                : conn.user1;
-
-            const actions =
-              type === "received" ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleAccept(conn._id)}
-                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg shadow-sm"
-                  >
-                    <Check size={16} /> Accept
-                  </button>
-                  <button
-                    onClick={() => handleReject(conn._id)}
-                    className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg shadow-sm"
-                  >
-                    <X size={16} /> Reject
-                  </button>
-                </div>
-              ) : type === "sent" ? (
-                <button
-                  onClick={() => handleReject(conn._id)}
-                  className="flex items-center gap-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg shadow-sm"
-                >
-                  <X size={16} /> Cancel
-                </button>
-              ) : (
-                <button
-                  onClick={() =>
-                    (window.location.href = `/chat?to=${user._id}`)
-                  }
-                  className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg shadow-sm"
-                >
-                  <MessageCircle size={16} /> Chat
-                </button>
-              );
-
-            return <Card key={conn._id} user={user} actions={actions} />;
-          })}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-
-  if (loading) return <p className="text-center p-6 text-lg">Loading...</p>;
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 text-gray-900 dark:text-gray-100">
-      <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-        Connections
-      </h1>
+    <div className="max-w-4xl mx-auto px-4 py-8">
+
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="page-title">Connections</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Manage your connection requests and accepted matches.
+        </p>
+      </div>
 
       {/* Tabs */}
-      <div className="flex justify-center gap-4 mb-8">
-        {[
-          { key: "received", label: "Pending Received" },
-          { key: "sent", label: "Pending Sent" },
-          { key: "accepted", label: "Accepted" },
-        ].map((tab) => (
+      <div className="flex items-center gap-1 border-b border-gray-200 dark:border-gray-700 mb-6">
+        {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-5 py-2 rounded-full font-medium transition-all shadow-sm ${
+            className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                ? "text-brand-600 dark:text-brand-400"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             }`}
           >
             {tab.label}
+            {tab.count > 0 && (
+              <span className={`ml-1.5 text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                activeTab === tab.key
+                  ? "bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+              }`}>
+                {tab.count}
+              </span>
+            )}
+            {activeTab === tab.key && (
+              <motion.div
+                layoutId="tab-underline"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 dark:bg-brand-400 rounded-full"
+              />
+            )}
           </button>
         ))}
       </div>
 
-      {/* Tab Content */}
-      {activeTab === "received" && (
-        <TabContent data={pendingReceived} type="received" />
-      )}
-      {activeTab === "sent" && <TabContent data={pendingSent} type="sent" />}
-      {activeTab === "accepted" && (
-        <TabContent data={accepted} type="accepted" />
-      )}
+      {/* Content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.15 }}
+        >
+          {(() => {
+            const data =
+              activeTab === "received" ? pendingReceived :
+              activeTab === "sent"     ? pendingSent     : accepted;
+            const type = activeTab;
+
+            if (data.length === 0) {
+              return (
+                <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+                  <Users size={32} className="mx-auto mb-3 opacity-40" />
+                  <p className="text-sm">
+                    {type === "received" ? "No pending requests." :
+                     type === "sent"     ? "No sent requests."    :
+                                          "No connections yet. Start connecting through Matchmaking."}
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid sm:grid-cols-2 gap-3">
+                {data.map((conn) => {
+                  const user = getUser(conn, type);
+                  return (
+                    <motion.div
+                      key={conn._id}
+                      className="card card-p flex items-start gap-4"
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <img
+                        src={user.profilePicture || "/default-avatar.png"}
+                        alt={user.fullName}
+                        className="w-12 h-12 rounded-full object-cover border border-gray-200 dark:border-gray-700 shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {user.fullName || "Unknown"}
+                        </p>
+                        <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5 truncate">
+                          <Mail size={11} /> {user.email}
+                        </p>
+                        {user.availability?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {user.availability.slice(0, 2).map((slot, i) => (
+                              <span key={i} className="badge-gray text-xs">
+                                <Clock size={10} className="inline mr-1" />
+                                {slot.day} {slot.time}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex gap-2 mt-3">
+                          {type === "received" && (
+                            <>
+                              <button
+                                onClick={() => handleAccept(conn._id)}
+                                className="btn btn-primary btn-sm"
+                              >
+                                <Check size={13} /> Accept
+                              </button>
+                              <button
+                                onClick={() => handleReject(conn._id)}
+                                className="btn btn-secondary btn-sm"
+                              >
+                                <X size={13} /> Decline
+                              </button>
+                            </>
+                          )}
+                          {type === "sent" && (
+                            <button
+                              onClick={() => handleReject(conn._id)}
+                              className="btn btn-secondary btn-sm"
+                            >
+                              <X size={13} /> Cancel
+                            </button>
+                          )}
+                          {type === "accepted" && (
+                            <button
+                              onClick={() => navigate(`/chat?to=${user._id}`)}
+                              className="btn btn-primary btn-sm"
+                            >
+                              <MessageCircle size={13} /> Message
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

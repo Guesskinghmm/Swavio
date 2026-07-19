@@ -1,127 +1,167 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
-import { motion } from "framer-motion";
-import { Smile, Paperclip, Send, Video, Trash2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Smile,
+  Paperclip,
+  Send,
+  Video,
+  Trash2,
+  X,
+  FileText,
+  ChevronDown,
+} from "lucide-react";
 import { socket, SERVER_URL } from "../socket";
-import VideoCall from "./VideoCall"; // ✅ Import modal component
+import VideoCall from "./VideoCall";
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatTime(date) {
+  return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function FilePreviewMessage({ fileUrl }) {
+  const fullUrl = `${SERVER_URL}${fileUrl}`;
+  const ext = fileUrl.split(".").pop().toLowerCase();
+
+  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext))
+    return (
+      <img
+        src={fullUrl}
+        alt="attachment"
+        className="max-w-xs rounded-lg border border-white/20 mb-1"
+      />
+    );
+  if (["mp4", "webm", "ogg"].includes(ext))
+    return (
+      <video
+        src={fullUrl}
+        controls
+        className="max-w-xs rounded-lg mb-1"
+      />
+    );
+  return (
+    <a
+      href={fullUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-2 text-xs underline opacity-90 mb-1"
+    >
+      <FileText size={14} />
+      {ext.toUpperCase()} attachment
+    </a>
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Chat() {
-  const [searchParams] = useSearchParams();
-  const receiverId = searchParams.get("to");
-  const userId = localStorage.getItem("userId");
+  const [searchParams]  = useSearchParams();
+  const receiverId      = searchParams.get("to");
+  const userId          = localStorage.getItem("userId");
 
-  const [messages, setMessages] = useState([]);
-  const [message, setMessage] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [showEmoji, setShowEmoji] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [receiverUser, setReceiverUser] = useState(null);
-  const [showCall, setShowCall] = useState(false);
+  const [messages,      setMessages]      = useState([]);
+  const [message,       setMessage]       = useState("");
+  const [selectedFile,  setSelectedFile]  = useState(null);
+  const [showEmoji,     setShowEmoji]     = useState(false);
+  const [currentUser,   setCurrentUser]   = useState(null);
+  const [receiverUser,  setReceiverUser]  = useState(null);
+  const [showCall,      setShowCall]      = useState(false);
+  const [isAtBottom,    setIsAtBottom]    = useState(true);
+  const [sending,       setSending]       = useState(false);
 
-  const fileInputRef = useRef();
-  const chatEndRef = useRef();
-  const chatContainerRef = useRef();
+  const fileInputRef     = useRef();
+  const chatEndRef       = useRef();
+  const chatScrollRef    = useRef();
 
-  // ✅ Track if user is at bottom
-  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
-
-  // Fetch user data
+  // ── Fetch user info ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (userId) axios.get(`${SERVER_URL}/api/users/${userId}`).then((res) => setCurrentUser(res.data));
-    if (receiverId) axios.get(`${SERVER_URL}/api/users/${receiverId}`).then((res) => setReceiverUser(res.data));
+    if (userId)     axios.get(`${SERVER_URL}/api/users/${userId}`)    .then((r) => setCurrentUser(r.data));
+    if (receiverId) axios.get(`${SERVER_URL}/api/users/${receiverId}`).then((r) => setReceiverUser(r.data));
   }, [userId, receiverId]);
 
-  // Join socket room
-  useEffect(() => {
-    if (userId) socket.emit("join", userId);
-  }, [userId]);
-
-  // ✅ Fetch initial messages
+  // ── Load initial messages ────────────────────────────────────────────────
   useEffect(() => {
     if (!userId || !receiverId) return;
-    axios.get(`${SERVER_URL}/api/messages/${userId}/${receiverId}`).then((res) => setMessages(res.data));
+    axios
+      .get(`${SERVER_URL}/api/messages/${userId}/${receiverId}`)
+      .then((res) => setMessages(res.data));
   }, [userId, receiverId]);
 
-  // ✅ Auto-refresh messages every 3 seconds
+  // ── Socket listeners (Phase 2: named handlers so off() works correctly) ──
   useEffect(() => {
-    if (!userId || !receiverId) return;
-
-    const fetchMessages = async () => {
-      try {
-        const res = await axios.get(`${SERVER_URL}/api/messages/${userId}/${receiverId}`);
-        setMessages(res.data);
-      } catch (err) {
-        console.error("Auto-refresh error:", err);
-      }
-    };
-
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 3000);
-
-    return () => clearInterval(interval);
-  }, [userId, receiverId]);
-
-  // ✅ Socket listeners
-  useEffect(() => {
-    socket.on("receiveMessage", (msg) => {
+    const handleReceiveMessage = (msg) => {
       if (
         (msg.senderId === receiverId && msg.receiverId === userId) ||
-        (msg.senderId === userId && msg.receiverId === receiverId)
+        (msg.senderId === userId    && msg.receiverId === receiverId)
       ) {
         setMessages((prev) => [...prev, msg]);
       }
-    });
+    };
 
-    socket.on("call-ended", ({ senderId }) => {
+    const handleCallEnded = ({ senderId }) => {
       if (senderId === receiverId) {
         setMessages((prev) => [
           ...prev,
-          { text: "📴 Call ended", senderId: "system", createdAt: new Date() }
+          { text: "Call ended", senderId: "system", createdAt: new Date() },
         ]);
         setShowCall(false);
       }
-    });
+    };
+
+    socket.on("receiveMessage", handleReceiveMessage);
+    socket.on("call-ended",     handleCallEnded);
 
     return () => {
-      socket.off("receiveMessage");
-      socket.off("call-ended");
+      socket.off("receiveMessage", handleReceiveMessage);
+      socket.off("call-ended",     handleCallEnded);
     };
   }, [receiverId, userId]);
 
-  // ✅ Auto-scroll only if user is at bottom
+  // ── Auto-scroll ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (isUserAtBottom) {
+    if (isAtBottom) {
       chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isUserAtBottom]);
+  }, [messages, isAtBottom]);
 
-  // ✅ Handle sending message
+  const handleScroll = useCallback(() => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    setIsAtBottom(scrollTop + clientHeight >= scrollHeight - 60);
+  }, []);
+
+  // ── Send message (Phase 3 Bug 1: correct FormData for Multer) ────────────
   const sendMessage = async (customText = null) => {
-    if (!customText && !message && !selectedFile) return;
+    if (!customText && !message.trim() && !selectedFile) return;
+    setSending(true);
 
     const formData = new FormData();
-    formData.append("senderId", userId);
+    formData.append("senderId",   userId);
     formData.append("receiverId", receiverId);
-    formData.append("text", customText || message);
+    formData.append("text",       customText || message);
     formData.append("senderName", currentUser?.fullName || "Someone");
     if (selectedFile) formData.append("file", selectedFile);
 
     try {
+      // Axios auto-sets Content-Type: multipart/form-data for FormData
       const res = await axios.post(`${SERVER_URL}/api/messages`, formData);
       socket.emit("sendMessage", res.data);
       setMessages((prev) => [...prev, res.data]);
       setMessage("");
       setSelectedFile(null);
-      fileInputRef.current.value = "";
-      setIsUserAtBottom(true); // ✅ Scroll down after sending message
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setIsAtBottom(true);
     } catch (err) {
       console.error("Send error:", err);
+    } finally {
+      setSending(false);
     }
   };
 
-  // ✅ Clear chat
   const clearChat = async () => {
     try {
       await axios.delete(`${SERVER_URL}/api/messages/${userId}/${receiverId}`);
@@ -131,87 +171,106 @@ export default function Chat() {
     }
   };
 
-  // ✅ Emoji picker
-  const handleEmojiClick = (emojiData) => setMessage((prev) => prev + emojiData.emoji);
+  const handleEmojiClick = (emojiData) => {
+    setMessage((prev) => prev + emojiData.emoji);
+    setShowEmoji(false);
+  };
 
-  // ✅ End video call
   const handleEndCall = () => {
     socket.emit("call-ended", { senderId: userId, receiverId });
-    sendMessage("📴 Call ended");
     setShowCall(false);
   };
 
-  // ✅ Render attachments
-  const renderFileMessage = (fileUrl) => {
-    const fullUrl = `${SERVER_URL}${fileUrl}`;
-    const ext = fileUrl.split(".").pop().toLowerCase();
-
-    if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext))
-      return <img src={fullUrl} className="w-40 rounded-md mb-1" />;
-    if (["mp4", "webm", "ogg"].includes(ext))
-      return <video src={fullUrl} className="w-40 rounded-md mb-1" controls />;
-    return (
-      <a href={fullUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline block mb-1">
-        📎 {ext.toUpperCase()} File
-      </a>
-    );
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
+  // ── Layout: Phase 3 Bug 2 — Chat owns viewport, no footer ────────────────
+  // height = 100vh - 64px navbar
   return (
-    <motion.div
-      className="max-w-4xl mx-auto p-4 h-screen flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+    <div
+      className="flex flex-col bg-gray-50 dark:bg-gray-900"
+      style={{ height: "calc(100vh - 64px)" }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-t-lg">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-          {receiverUser?.fullName || "Chat"}
-        </h2>
-        <button
-          onClick={() => setShowCall(true)}
-          className="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded-full shadow"
-        >
-          <Video size={18} />
-        </button>
+
+      {/* ── Header ── */}
+      <div className="shrink-0 flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-3">
+          <img
+            src={receiverUser?.profilePicture || "/default-avatar.png"}
+            alt={receiverUser?.fullName}
+            className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+          />
+          <div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
+              {receiverUser?.fullName || "Loading…"}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Active now</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCall(true)}
+            className="btn-ghost btn-sm rounded-lg text-gray-500 dark:text-gray-400"
+            title="Start video call"
+          >
+            <Video size={18} />
+          </button>
+          <button
+            onClick={clearChat}
+            className="btn-ghost btn-sm rounded-lg text-gray-500 dark:text-gray-400 hover:text-red-500"
+            title="Clear chat"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* Chat Messages */}
+      {/* ── Messages list — flex-1 + overflow-y-auto fixes viewport bug ── */}
       <div
-        ref={chatContainerRef}
-        onScroll={() => {
-          if (!chatContainerRef.current) return;
-          const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-          setIsUserAtBottom(scrollTop + clientHeight >= scrollHeight - 50);
-        }}
-        className="flex-grow overflow-y-auto space-y-3 p-3"
+        ref={chatScrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-2"
       >
         {messages.map((msg, i) => {
-          const isMine = msg.senderId === userId;
+          const isMine   = msg.senderId === userId;
           const isSystem = msg.senderId === "system";
+
+          if (isSystem) {
+            return (
+              <div key={i} className="flex justify-center">
+                <span className="text-xs text-gray-400 dark:text-gray-500 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full">
+                  {msg.text}
+                </span>
+              </div>
+            );
+          }
+
           return (
             <motion.div
               key={i}
               className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.15 }}
             >
               <div
-                className={`p-3 max-w-xs rounded-2xl shadow break-words ${
-                  isSystem
-                    ? "bg-gray-300 text-gray-800 text-center"
-                    : isMine
-                    ? "bg-blue-500 text-white rounded-br-none"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-none"
+                className={`max-w-xs sm:max-w-md rounded-2xl px-3.5 py-2.5 text-sm break-words ${
+                  isMine
+                    ? "bg-brand-600 text-white rounded-br-sm"
+                    : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-sm"
                 }`}
+                style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}
               >
-                {msg.fileUrl && renderFileMessage(msg.fileUrl)}
-                {msg.text && <p>{msg.text}</p>}
-                {!isSystem && (
-                  <small className="text-xs opacity-70 block mt-1">
-                    {new Date(msg.createdAt).toLocaleTimeString()}
-                  </small>
-                )}
+                {msg.fileUrl && <FilePreviewMessage fileUrl={msg.fileUrl} />}
+                {msg.text && <p className="leading-relaxed">{msg.text}</p>}
+                <p className={`text-xs mt-1.5 ${isMine ? "text-white/60" : "text-gray-400"}`}>
+                  {formatTime(msg.createdAt)}
+                </p>
               </div>
             </motion.div>
           );
@@ -219,53 +278,110 @@ export default function Chat() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input bar */}
-      <div className="flex items-center gap-2 p-3 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-lg">
-        <button onClick={() => setShowEmoji(!showEmoji)} className="text-gray-500 hover:text-yellow-500">
-          <Smile size={22} />
-        </button>
+      {/* Scroll-to-bottom button */}
+      <AnimatePresence>
+        {!isAtBottom && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            onClick={() => {
+              chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+              setIsAtBottom(true);
+            }}
+            className="absolute bottom-24 right-6 w-9 h-9 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center shadow-float"
+          >
+            <ChevronDown size={16} className="text-gray-500" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
+      {/* ── Emoji picker ── */}
+      <AnimatePresence>
         {showEmoji && (
-          <div className="absolute bottom-20 left-4 z-10">
-            <EmojiPicker onEmojiClick={handleEmojiClick} />
+          <motion.div
+            className="absolute bottom-20 left-4 z-20"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+          >
+            <EmojiPicker onEmojiClick={handleEmojiClick} height={360} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Input bar ── */}
+      <div className="shrink-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-4 py-3">
+
+        {/* File selected indicator */}
+        {selectedFile && (
+          <div className="flex items-center gap-2 mb-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2">
+            <Paperclip size={13} />
+            <span className="flex-1 truncate">{selectedFile.name}</span>
+            <button
+              onClick={() => {
+                setSelectedFile(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+              }}
+              className="hover:text-red-500 transition-colors"
+            >
+              <X size={13} />
+            </button>
           </div>
         )}
 
-        <input
-          className="flex-grow border border-gray-300 dark:border-gray-600 rounded-full px-4 py-2 focus:outline-none focus:ring focus:ring-blue-300 dark:bg-gray-700 dark:text-white"
-          placeholder="Type a message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowEmoji(!showEmoji)}
+            className="btn-ghost btn-sm rounded-lg text-gray-400 hover:text-amber-500 shrink-0"
+            aria-label="Emoji"
+          >
+            <Smile size={20} />
+          </button>
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={(e) => setSelectedFile(e.target.files[0])}
-          accept=".pdf,image/*,video/*,.zip,.rar"
-          hidden
-        />
-        <button onClick={() => fileInputRef.current.click()} className="text-gray-500 hover:text-blue-500">
-          <Paperclip size={22} />
-        </button>
+          <input
+            className="flex-1 min-w-0 px-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-xl border border-transparent focus:outline-none focus:border-brand-400 focus:bg-white dark:focus:bg-gray-700 transition-colors placeholder-gray-400"
+            placeholder="Write a message…"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
 
-        <button onClick={() => sendMessage()} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-full shadow">
-          <Send size={18} />
-        </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={(e) => setSelectedFile(e.target.files[0] || null)}
+            accept=".pdf,image/*,video/*,.zip,.rar,.doc,.docx"
+            hidden
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="btn-ghost btn-sm rounded-lg text-gray-400 hover:text-brand-500 shrink-0"
+            aria-label="Attach file"
+          >
+            <Paperclip size={19} />
+          </button>
 
-        <button onClick={clearChat} className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-full shadow">
-          <Trash2 size={18} />
-        </button>
+          <button
+            onClick={() => sendMessage()}
+            disabled={sending || (!message.trim() && !selectedFile)}
+            className="btn btn-primary btn-sm rounded-xl shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Send"
+          >
+            <Send size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* Video Call Modal */}
+      {/* ── Video Call Modal (Phase 3 Bug 3) ── */}
       {showCall && (
         <VideoCall
           userId={userId}
           receiverId={receiverId}
+          sendMessageFn={sendMessage}
           onEndCall={handleEndCall}
         />
       )}
-    </motion.div>
+    </div>
   );
 }
