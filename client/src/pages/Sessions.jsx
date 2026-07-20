@@ -45,6 +45,7 @@ export default function Sessions() {
   const [rating, setRating] = useState(5);
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false); // ✅ Prevents double-submit
+  const [completing, setCompleting] = useState(false); // ✅ Prevents double-submit on completion
 
   // Fetch partners from established connections
   const fetchStudents = async () => {
@@ -157,6 +158,8 @@ export default function Sessions() {
   };
 
   const handleCompleteSession = async () => {
+    if (completing) return;
+    setCompleting(true);
     try {
       const payload = {};
       if (selectedSession.studentId === userId) {
@@ -172,6 +175,8 @@ export default function Sessions() {
     } catch (err) {
       console.error("❌ Error completing session", err);
       alert("❌ Failed to complete session!");
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -395,9 +400,10 @@ export default function Sessions() {
             <div className="flex gap-3 pt-2">
               <button
                 onClick={handleCompleteSession}
-                className="btn btn-primary btn-md flex-1"
+                disabled={completing}
+                className="btn btn-primary btn-md flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm Completion
+                {completing ? "Confirming..." : "Confirm Completion"}
               </button>
               <button
                 onClick={() => setShowModal(false)}

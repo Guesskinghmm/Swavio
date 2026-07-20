@@ -145,7 +145,15 @@ export default function Profile() {
         : userData.availability  ? [userData.availability]  : [];
 
       setUser(userData);
-      setFormData(userData);
+      
+      const availString = userData.availability
+        .map((slot) => `${slot.day} ${slot.time}`)
+        .join(", ");
+
+      setFormData({
+        ...userData,
+        availability: availString,
+      });
     } catch (err) {
       console.error("Error fetching profile:", err);
     }
@@ -196,13 +204,36 @@ export default function Profile() {
   const handleSave = async () => {
     try {
       let res;
+      // Convert availability string to array of slot objects before sending
+      let parsedAvailability = [];
+      if (typeof formData.availability === "string" && formData.availability.trim()) {
+        parsedAvailability = formData.availability
+          .split(",")
+          .map((item) => {
+            const trimmed = item.trim();
+            if (!trimmed) return null;
+            const parts = trimmed.split(" ");
+            const day   = parts[0] || "Flexible";
+            const time  = parts.slice(1).join(" ") || "Flexible";
+            return { day, time };
+          })
+          .filter(Boolean);
+      } else if (Array.isArray(formData.availability)) {
+        parsedAvailability = formData.availability;
+      }
+
+      const payloadBase = {
+        ...formData,
+        availability: parsedAvailability,
+      };
+
       if (selectedFile) {
         const data = new FormData();
-        Object.keys(formData).forEach((key) => {
-          if (Array.isArray(formData[key])) {
-            data.append(key, JSON.stringify(formData[key]));
+        Object.keys(payloadBase).forEach((key) => {
+          if (Array.isArray(payloadBase[key])) {
+            data.append(key, JSON.stringify(payloadBase[key]));
           } else {
-            data.append(key, formData[key] || "");
+            data.append(key, payloadBase[key] || "");
           }
         });
         data.append("profilePicture", selectedFile);
@@ -213,7 +244,7 @@ export default function Profile() {
           { headers: { "Content-Type": "multipart/form-data" } }
         );
       } else {
-        const payload = { ...formData };
+        const payload = { ...payloadBase };
         ["skillsToTeach", "skillsToLearn", "availability"].forEach((key) => {
           if (Array.isArray(payload[key])) {
             payload[key] = JSON.stringify(payload[key]);
@@ -561,26 +592,9 @@ export default function Profile() {
                   </label>
                   <input
                     name="availability"
-                    value={
-                      formData.availability
-                        ?.map((slot) => `${slot.day} ${slot.time}`)
-                        .join(", ") || ""
-                    }
+                    value={formData.availability || ""}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        availability: e.target.value
-                          .split(",")
-                          .map((item) => {
-                            const trimmed = item.trim();
-                            if (!trimmed) return null;
-                            const parts = trimmed.split(" ");
-                            const day   = parts[0] || "Flexible";
-                            const time  = parts.slice(1).join(" ") || "Flexible";
-                            return { day, time };
-                          })
-                          .filter(Boolean),
-                      })
+                      setFormData({ ...formData, availability: e.target.value })
                     }
                     className="input"
                   />

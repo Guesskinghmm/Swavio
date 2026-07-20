@@ -77,6 +77,7 @@ io.on('connection', (socket) => {
   // Track online users
   socket.on("join", (userId) => {
     onlineUsers[userId] = socket.id;
+    socket.join(userId.toString()); // Join user's own room
     console.log(`${userId} is online`);
   });
 

@@ -64,12 +64,21 @@ const LearnMore = () => {
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             Connect. Learn. Grow. One skill at a time.
           </p>
-          <Link
-            to="/register"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition duration-300"
-          >
-            Get Started
-          </Link>
+          {localStorage.getItem("token") ? (
+            <Link
+              to="/dashboard"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition duration-300"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/login"
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition duration-300"
+            >
+              Get Started
+            </Link>
+          )}
         </section>
       </div>
     </motion.div>
