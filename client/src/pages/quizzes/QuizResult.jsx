@@ -99,7 +99,7 @@ export default function QuizResult() {
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-brand-600 dark:text-brand-400 pl-5">
-                <span>Correct Answer: {s.answer}</span>
+                <span>Correct Answer: {s.correctAnswer}</span>
               </div>
             </div>
           </div>

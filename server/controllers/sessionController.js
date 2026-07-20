@@ -121,19 +121,19 @@ export const completeSession = async (req, res) => {
 
     if (!session) return res.status(404).json({ error: "Session not found" });
 
-    const student = await User.findById(session.studentId);
-    if (student) {
-      student.ratingsReceived.push({ userId: session.teacherId, rating });
-      student.ratingCount = student.ratingsReceived.length;
-      student.rating =
-        student.ratingsReceived.reduce((sum, r) => sum + r.rating, 0) / student.ratingCount;
+    const teacher = await User.findById(session.teacherId);
+    if (teacher && typeof rating === "number") {
+      teacher.ratingsReceived.push({ userId: session.studentId, rating });
+      teacher.ratingCount = teacher.ratingsReceived.length;
+      teacher.rating =
+        teacher.ratingsReceived.reduce((sum, r) => sum + r.rating, 0) / teacher.ratingCount;
 
-      student.badges = [];
-      if (student.ratingCount >= 1) student.badges.push("⭐ Beginner Tutor");
-      if (student.ratingCount >= 3 && student.rating >= 3) student.badges.push("🌟 Good Tutor");
-      if (student.ratingCount >= 10 && student.rating >= 4.5) student.badges.push("🏆 Top Mentor");
+      teacher.badges = [];
+      if (teacher.ratingCount >= 1) teacher.badges.push("⭐ Beginner Tutor");
+      if (teacher.ratingCount >= 3 && teacher.rating >= 3) teacher.badges.push("🌟 Good Tutor");
+      if (teacher.ratingCount >= 10 && teacher.rating >= 4.5) teacher.badges.push("🏆 Top Mentor");
 
-      await student.save();
+      await teacher.save();
     }
 
     const notifMsg = `✅ Session on ${session.skill} is completed!`;

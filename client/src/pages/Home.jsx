@@ -96,6 +96,7 @@ const fadeUp = { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0
 
 export default function Home() {
   const [openFAQ, setOpenFAQ] = useState(null);
+  const isAuthenticated = !!localStorage.getItem("token");
 
   return (
     <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
@@ -122,9 +123,15 @@ export default function Home() {
             what you already know — no fees, just reciprocal growth.
           </p>
           <div className="flex items-center gap-3 flex-wrap">
-            <Link to="/register" className="btn btn-primary btn-lg">
-              Get started free
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="btn btn-primary btn-lg">
+                Go to Dashboard
+              </Link>
+            ) : (
+              <Link to="/login" className="btn btn-primary btn-lg">
+                Get Started
+              </Link>
+            )}
             <Link to="/learnmore" className="btn btn-secondary btn-lg">
               Learn more <ArrowRight size={16} />
             </Link>
@@ -310,9 +317,15 @@ export default function Home() {
               tools to connect, grow, and thrive.
             </p>
             <div className="flex items-center justify-center gap-3 flex-wrap">
-              <Link to="/register" className="btn btn-primary btn-lg">
-                Create your account
-              </Link>
+              {isAuthenticated ? (
+                <Link to="/dashboard" className="btn btn-primary btn-lg">
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <Link to="/login" className="btn btn-primary btn-lg">
+                  Get Started
+                </Link>
+              )}
               <Link to="/contact" className="btn btn-ghost btn-lg">
                 Talk to us
               </Link>
