@@ -10,6 +10,7 @@ import {
   Star,
   BookOpen,
   Plus,
+  Loader2,
 } from "lucide-react";
 
 // Helper: formats local date and time to YYYY-MM-DDTHH:MM
@@ -45,12 +46,19 @@ export default function Sessions() {
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false); // ✅ Prevents double-submit
 
+  // Fetch partners from established connections
   const fetchStudents = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/users`);
-      setStudents(res.data.filter((u) => u._id !== userId));
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/connection/accepted/${userId}`);
+      const partnersList = (res.data || [])
+        .map((conn) => {
+          const otherUser = conn.user1?._id === userId ? conn.user2 : conn.user1;
+          return otherUser;
+        })
+        .filter(Boolean);
+      setStudents(partnersList);
     } catch (err) {
-      console.error("❌ Error fetching users", err);
+      console.error("❌ Error fetching established connections", err);
     }
   };
 
@@ -178,51 +186,45 @@ export default function Sessions() {
   const pendingSessions = sessions.filter((s) => !s.completed);
   const completedSessions = sessions.filter((s) => s.completed);
 
+  const isFormInvalid = !formData.skill || !formData.datetime || !formData.studentId;
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+      <div className="flex items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="page-title mb-1">My Sessions</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Schedule and manage your peer tutoring exchange sessions.
           </p>
         </div>
-        <button
-          onClick={() => {
-            if (showForm) {
-              resetForm();
-            } else {
-              setShowForm(true);
-            }
-          }}
-          className="btn btn-primary btn-md shrink-0 shadow-sm"
-        >
-          {showForm ? "Cancel" : (
-            <>
-              <Plus size={16} /> Book New Session
-            </>
-          )}
-        </button>
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="btn btn-primary btn-md shrink-0 shadow-sm"
+          >
+            <Plus size={16} /> Schedule Session
+          </button>
+        )}
       </div>
 
       {/* Booking Form Card */}
       {showForm && (
-        <div className="card card-p mb-8 border border-gray-200 dark:border-gray-800 animate-fade-in-up">
-          <h2 className="section-heading mb-4 flex items-center gap-2">
+        <div className="card card-p mb-10 border border-gray-200 dark:border-gray-800 animate-fade-in-up">
+          <h2 className="section-heading mb-6 flex items-center gap-2">
             <BookOpen size={16} className="text-brand-500" />
             {editId ? "Edit Scheduled Session" : "Schedule New Session"}
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                 Session Type
               </label>
               <select
                 value={sessionType}
                 onChange={(e) => setSessionType(e.target.value)}
-                className="input"
+                className="input p-3 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="teaching">🧑‍🏫 Teaching (You teach others)</option>
                 <option value="learning">📚 Learning (Others teach you)</option>
@@ -230,14 +232,14 @@ export default function Sessions() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                {sessionType === "teaching" ? "Select Student" : "Select Teacher"}
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                {sessionType === "teaching" ? "Select Student" : "Select Tutor"}
               </label>
               <select
                 name="studentId"
                 value={formData.studentId}
                 onChange={handleChange}
-                className="input"
+                className="input p-3 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">👥 Choose partner...</option>
                 {students.map((s) => (
@@ -249,7 +251,7 @@ export default function Sessions() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                 Topic / Skill
               </label>
               <input
@@ -258,12 +260,12 @@ export default function Sessions() {
                 placeholder="e.g. French, Python, Guitar"
                 value={formData.skill}
                 onChange={handleChange}
-                className="input"
+                className="input p-3 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                 Date & Time
               </label>
               <input
@@ -272,12 +274,12 @@ export default function Sessions() {
                 min={getMinDateTime()}
                 value={formData.datetime}
                 onChange={handleChange}
-                className="input"
+                className="input p-3 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                 Notes (Optional)
               </label>
               <textarea
@@ -286,7 +288,7 @@ export default function Sessions() {
                 value={formData.notes}
                 onChange={handleChange}
                 rows={3}
-                className="input"
+                className="input p-3 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               />
             </div>
           </div>
@@ -294,10 +296,19 @@ export default function Sessions() {
           <div className="flex gap-3">
             <button
               onClick={handleSave}
-              disabled={saving}
-              className="btn btn-primary btn-md flex-1 md:flex-initial md:px-8 disabled:opacity-50"
+              disabled={saving || isFormInvalid}
+              className="btn btn-primary btn-md flex-1 md:flex-initial md:px-8 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {saving ? "⏳ Saving..." : editId ? "Update Session" : "Save & Book"}
+              {saving ? (
+                <>
+                  <Loader2 className="animate-spin w-4 h-4 mr-2" />
+                  Saving...
+                </>
+              ) : editId ? (
+                "Update Session"
+              ) : (
+                "Save & Book"
+              )}
             </button>
             <button
               onClick={resetForm}
@@ -342,18 +353,18 @@ export default function Sessions() {
             </div>
             
             {selectedSession?.studentId === userId ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                   You completed your learning session with <strong>{selectedSession?.teacherName}</strong>. Please rate their teaching to help them gain badges!
                 </p>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                     Rating
                   </label>
                   <select
                     value={rating}
                     onChange={(e) => setRating(Number(e.target.value))}
-                    className="input"
+                    className="input p-3 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     {[1, 2, 3, 4, 5].map((num) => (
                       <option key={num} value={num}>
@@ -363,13 +374,13 @@ export default function Sessions() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
                     Feedback (Optional)
                   </label>
                   <textarea
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
-                    className="input"
+                    className="input p-3 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="Write a brief review of the teaching..."
                     rows={3}
                   />
@@ -414,8 +425,9 @@ function Section({
 }) {
   if (sessions.length === 0) {
     return (
-      <div className="mb-10 text-center py-6 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
-        <p className="text-xs text-gray-400 dark:text-gray-500">
+      <div className="mb-10 text-center py-10 flex flex-col items-center justify-center">
+        <Calendar size={32} className="text-gray-300 dark:text-gray-600 mb-3" />
+        <p className="text-sm font-medium text-gray-400 dark:text-gray-500">
           {completed ? "No completed sessions yet." : "No upcoming sessions booked."}
         </p>
       </div>
@@ -423,8 +435,8 @@ function Section({
   }
 
   return (
-    <div className="mb-10">
-      <h3 className="text-sm font-semibold tracking-wider uppercase text-gray-400 dark:text-gray-500 mb-4 px-1">
+    <div className="mb-10 animate-fade-in-up">
+      <h3 className="text-xs font-semibold tracking-wider uppercase text-gray-400 dark:text-gray-500 mb-4 px-1">
         {title}
       </h3>
       <div className="grid grid-cols-1 gap-4">
@@ -463,7 +475,7 @@ function Section({
                 </div>
                 
                 {session.notes && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 italic mt-1 pl-4 border-l border-gray-200 dark:border-gray-800">
+                  <p className="text-xs text-gray-450 dark:text-gray-500 italic mt-1 pl-4 border-l border-gray-200 dark:border-gray-800">
                     "{session.notes}"
                   </p>
                 )}
