@@ -147,7 +147,11 @@ export default function Profile() {
       setUser(userData);
       
       const availString = userData.availability
-        .map((slot) => `${slot.day} ${slot.time}`)
+        .map((slot) => {
+          if (slot.day && slot.time) return `${slot.day} ${slot.time}`;
+          return slot.day || slot.time || "";
+        })
+        .filter(Boolean)
         .join(", ");
 
       setFormData({
@@ -213,8 +217,8 @@ export default function Profile() {
             const trimmed = item.trim();
             if (!trimmed) return null;
             const parts = trimmed.split(" ");
-            const day   = parts[0] || "Flexible";
-            const time  = parts.slice(1).join(" ") || "Flexible";
+            const day   = parts[0] || "";
+            const time  = parts.slice(1).join(" ") || "";
             return { day, time };
           })
           .filter(Boolean);
@@ -256,15 +260,31 @@ export default function Profile() {
         );
       }
 
+      const savedUser = res.data;
+      savedUser.skillsToTeach = Array.isArray(savedUser.skillsToTeach) ? savedUser.skillsToTeach : [];
+      savedUser.skillsToLearn = Array.isArray(savedUser.skillsToLearn) ? savedUser.skillsToLearn : [];
+      savedUser.availability  = Array.isArray(savedUser.availability)  ? savedUser.availability  : [];
+
+      const formattedAvail = savedUser.availability
+        .map((slot) => {
+          if (slot.day && slot.time) return `${slot.day} ${slot.time}`;
+          return slot.day || slot.time || "";
+        })
+        .filter(Boolean)
+        .join(", ");
+
       // ✅ FIX: immediately apply the returned user data (includes new profilePicture URL)
-      setUser(res.data);
+      setUser(savedUser);
+      setFormData({
+        ...savedUser,
+        availability: formattedAvail,
+      });
+
       // ✅ FIX: clear preview so avatar falls through to user.profilePicture
       setPreviewImage(null);
       setSelectedFile(null);
       setCropSrc(null);
       setShowSidebar(false);
-      // Silently re-sync badges/counts in the background
-      fetchProfile();
     } catch (err) {
       console.error("Failed to update profile", err);
     }
