@@ -116,6 +116,17 @@ export default function NotificationBell({ userId, socket }) {
     }
   };
 
+  const deleteNotification = async (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/notifications/${id}`);
+      setNotifications((prev) => prev.filter((n) => n._id !== id));
+    } catch (err) {
+      console.error("Error deleting notification:", err);
+    }
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="relative" ref={dropdownRef}>
@@ -226,10 +237,20 @@ export default function NotificationBell({ userId, socket }) {
                         </p>
                       </div>
 
-                      {/* Unread dot */}
-                      {!notif.isRead && (
-                        <div className="shrink-0 w-2 h-2 rounded-full bg-brand-500 mt-2" />
-                      )}
+                      {/* Unread dot + delete */}
+                      <div className="flex flex-col items-center gap-1.5 shrink-0">
+                        {!notif.isRead && (
+                          <div className="w-2 h-2 rounded-full bg-brand-500" />
+                        )}
+                        <button
+                          onClick={(e) => deleteNotification(e, notif._id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-all"
+                          title="Delete"
+                          aria-label="Delete notification"
+                        >
+                          <X size={11} />
+                        </button>
+                      </div>
                     </Link>
                   );
                 })}

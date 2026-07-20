@@ -36,7 +36,16 @@ router.put("/:userId/read-all", async (req, res) => {
   }
 });
 
-// ✅ Clear all notifications
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Notification.findByIdAndDelete(id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: "Error deleting notification" });
+  }
+});
+
 router.delete("/:userId/clear", async (req, res) => {
   try {
     const { userId } = req.params;

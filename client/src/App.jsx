@@ -26,6 +26,7 @@ import UsersList    from "./pages/UsersList";
 import Contact      from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms        from "./pages/Terms";
+import NotificationsPage from "./pages/NotificationsPage";
 
 import { socket } from "./socket";
 
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/contact"     element={<Contact />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms"       element={<Terms />} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
         </Routes>
       </div>
       {showFooter && <Footer />}
