@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -13,7 +12,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { socket } from "../socket";
+import { useNotifications } from "../context/NotificationContext";
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -50,85 +49,13 @@ function getTypeConfig(type) {
 }
 
 export default function NotificationsPage() {
-  const userId = localStorage.getItem("userId");
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { notifications, loading, unreadCount, markRead, markAllRead, deleteOne, clearAll } = useNotifications();
 
-  const fetchNotifications = useCallback(() => {
-    if (!userId) return;
-    setLoading(true);
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}`)
-      .then((res) => setNotifications(res.data ?? []))
-      .catch((err) => console.error("Error fetching notifications:", err))
-      .finally(() => setLoading(false));
-  }, [userId]);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
-
-  useEffect(() => {
-    const handler = (newNotif) => {
-      setNotifications((prev) => [
-        { ...newNotif, link: newNotif.link || "/notifications" },
-        ...prev,
-      ]);
-    };
-    socket.on("notification", handler);
-    return () => socket.off("notification", handler);
-  }, []);
-
-  const markRead = async (notif) => {
-    if (notif.isRead) return;
-    try {
-      await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/notifications/${notif._id}/read`
-      );
-      setNotifications((prev) =>
-        prev.map((n) => (n._id === notif._id ? { ...n, isRead: true } : n))
-      );
-    } catch (err) {
-      console.error("Error marking read:", err);
-    }
-  };
-
-  const markAllRead = async () => {
-    try {
-      await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/notifications/${userId}/read-all`
-      );
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    } catch (err) {
-      console.error("Error marking all read:", err);
-    }
-  };
-
-  const deleteOne = async (e, id) => {
+  const handleDeleteOne = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    try {
-      await axios.delete(
-        `${process.env.REACT_APP_API_URL}/api/notifications/${id}`
-      );
-      setNotifications((prev) => prev.filter((n) => n._id !== id));
-    } catch (err) {
-      console.error("Error deleting notification:", err);
-    }
+    deleteOne(id);
   };
-
-  const clearAll = async () => {
-    try {
-      await axios.delete(
-        `${process.env.REACT_APP_API_URL}/api/notifications/${userId}/clear`
-      );
-      setNotifications([]);
-    } catch (err) {
-      console.error("Error clearing notifications:", err);
-    }
-  };
-
-  const unreadCount = notifications?.filter((n) => !n.isRead).length ?? 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-10 px-4">
@@ -222,7 +149,7 @@ export default function NotificationsPage() {
                   >
                     <Link
                       to={notif.link || "/dashboard"}
-                      onClick={() => markRead(notif)}
+                      onClick={() => markRead(notif._id)}
                       className={`group flex items-start gap-4 px-5 py-4 transition-colors ${
                         notif.isRead
                           ? "hover:bg-gray-50 dark:hover:bg-gray-800/40"
@@ -255,7 +182,7 @@ export default function NotificationsPage() {
                           <div className="w-2 h-2 rounded-full bg-indigo-500" />
                         )}
                         <button
-                          onClick={(e) => deleteOne(e, notif._id)}
+                          onClick={(e) => handleDeleteOne(e, notif._id)}
                           className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-all"
                           title="Delete notification"
                           aria-label="Delete notification"

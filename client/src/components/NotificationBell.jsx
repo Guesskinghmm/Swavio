@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Bell, Calendar, MessageCircle, UserPlus, Brain, CheckCheck, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import { useNotifications } from "../context/NotificationContext";
 
 // ── Relative-time helper ──────────────────────────────────────────────────────
 function timeAgo(dateStr) {
@@ -32,32 +32,16 @@ function getTypeConfig(type) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function NotificationBell({ userId, socket }) {
-  const [notifications, setNotifications] = useState([]);
+export default function NotificationBell() {
+  const { notifications, unreadCount, markRead, markAllRead, deleteOne, clearAll } = useNotifications();
   const [showDropdown,  setShowDropdown]  = useState(false);
   const dropdownRef = useRef(null);
 
-  // ── Fetch notifications ───────────────────────────────────────────────────
-  const fetchNotifications = useCallback(() => {
-    if (!userId) return;
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}`)
-      .then((res) => setNotifications(res.data))
-      .catch((err) => console.error("Error fetching notifications:", err));
-  }, [userId]);
-
-  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
-
-  // ── Real-time socket notifications ───────────────────────────────────────
+  // ── Dynamic page title ────────────────────────────────────────────────────
   useEffect(() => {
-    if (!socket || !userId) return;
-    const handler = (newNotif) => {
-      const notifWithLink = { ...newNotif, link: newNotif.link || "/notifications" };
-      setNotifications((prev) => [notifWithLink, ...prev]);
-    };
-    socket.on("notification", handler);
-    return () => socket.off("notification", handler);
-  }, [socket, userId]);
+    document.title = unreadCount > 0 ? `(${unreadCount}) Swavio` : "Swavio";
+    return () => { document.title = "Swavio"; };
+  }, [unreadCount]);
 
   // ── Outside-click to close ────────────────────────────────────────────────
   useEffect(() => {
@@ -70,61 +54,16 @@ export default function NotificationBell({ userId, socket }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showDropdown]);
 
-  // ── Global event sync ─────────────────────────────────────────────────────
-  useEffect(() => {
-    window.addEventListener("notifications-updated", fetchNotifications);
-    return () => window.removeEventListener("notifications-updated", fetchNotifications);
-  }, [fetchNotifications]);
-
-  // ── Dynamic page title ────────────────────────────────────────────────────
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-  useEffect(() => {
-    document.title = unreadCount > 0 ? `(${unreadCount}) Swavio` : "Swavio";
-    return () => { document.title = "Swavio"; };
-  }, [unreadCount]);
-
   // ── Actions ───────────────────────────────────────────────────────────────
   const handleNotificationClick = async (notif) => {
-    try {
-      if (!notif.isRead) {
-        await axios.put(`${process.env.REACT_APP_API_URL}/api/notifications/${notif._id}/read`);
-        setNotifications((prev) =>
-          prev.map((n) => (n._id === notif._id ? { ...n, isRead: true } : n))
-        );
-      }
-      setShowDropdown(false);
-    } catch (err) {
-      console.error("Error marking notification as read:", err);
-    }
+    if (!notif.isRead) await markRead(notif._id);
+    setShowDropdown(false);
   };
 
-  const markAllAsRead = async () => {
-    try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}/read-all`);
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    } catch (err) {
-      console.error("Error marking all as read:", err);
-    }
-  };
-
-  const clearAllNotifications = async () => {
-    try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}/clear`);
-      setNotifications([]);
-    } catch (err) {
-      console.error("Error clearing notifications:", err);
-    }
-  };
-
-  const deleteNotification = async (e, id) => {
+  const handleDeleteOne = (e, id) => {
     e.preventDefault();
     e.stopPropagation();
-    try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/notifications/${id}`);
-      setNotifications((prev) => prev.filter((n) => n._id !== id));
-    } catch (err) {
-      console.error("Error deleting notification:", err);
-    }
+    deleteOne(id);
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -180,14 +119,14 @@ export default function NotificationBell({ userId, socket }) {
               <div className="flex items-center gap-3">
                 {unreadCount > 0 && (
                   <button
-                    onClick={markAllAsRead}
+                    onClick={markAllRead}
                     className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:underline"
                   >
                     Mark all read
                   </button>
                 )}
                 <button
-                  onClick={clearAllNotifications}
+                  onClick={clearAll}
                   className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-red-500 transition-colors"
                   title="Clear all"
                 >
@@ -243,7 +182,7 @@ export default function NotificationBell({ userId, socket }) {
                           <div className="w-2 h-2 rounded-full bg-brand-500" />
                         )}
                         <button
-                          onClick={(e) => deleteNotification(e, notif._id)}
+                          onClick={(e) => handleDeleteOne(e, notif._id)}
                           className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-all"
                           title="Delete"
                           aria-label="Delete notification"
