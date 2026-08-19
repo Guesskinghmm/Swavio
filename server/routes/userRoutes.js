@@ -1,6 +1,17 @@
 import express from "express";
 import { upload } from "../middleware/uploadMiddleware.js";
+import {
+  getUserProfile,
+  updateUserProfile,
+  getAllUsers,
+  getUserById,
+  rateUser,
+  deleteProfilePicture,
+} from "../controllers/userController.js";
+import { protect as auth } from "../middleware/authMiddleware.js";
+import User from "../models/User.js";
 
+const router = express.Router();
 // ✅ Get all users
 router.get("/", getAllUsers);
 
