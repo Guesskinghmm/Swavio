@@ -1,8 +1,10 @@
 // server/routes/chatRoutes.js
 import express from "express";
-import { getOrCreateChat } from "../controllers/chatController.js";
+import { accessChat, getUserChats } from "../controllers/chatController.js";
+import { protect } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
-router.post("/", getOrCreateChat);
+router.post("/", protect, accessChat);
+router.get("/:userId", protect, getUserChats);
 
 export default router;
