@@ -158,7 +158,7 @@ export const updateUserProfile = async (req, res) => {
 
     // ✅ Profile Picture Handling
     if (req.file) {
-      updateFields.profilePicture = `/uploads/${req.file.filename}`;
+      updateFields.profilePicture = req.file.path; // ✅ Uses the full Cloudinary URL
     } else if (profilePicture && profilePicture.startsWith("data:image")) {
       const base64Data = profilePicture.replace(/^data:image\/\w+;base64,/, "");
       const buffer = Buffer.from(base64Data, "base64");
