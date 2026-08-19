@@ -255,7 +255,7 @@ export default function Profile() {
           }
         });
         res = await axios.put(
-          `${process.env.REACT_APP_API_URL}/api/users/${loggedInUserId}`,
+          `${process.env.REACT_APP_API_URL}/api/users/edit/${loggedInUserId}`,
           payload
         );
       }
