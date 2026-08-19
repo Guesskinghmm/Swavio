@@ -285,8 +285,10 @@ export default function Profile() {
       setSelectedFile(null);
       setCropSrc(null);
       setShowSidebar(false);
+      alert("Profile updated successfully!");
     } catch (err) {
       console.error("Failed to update profile", err);
+      alert("Failed to update profile! Please check your network or server logs.");
     }
   };
 
