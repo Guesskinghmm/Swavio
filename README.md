@@ -20,9 +20,10 @@ A premium, minimalist full-stack platform enabling peer-to-peer skill exchange, 
 | Layer | Technology |
 | :--- | :--- |
 | **Frontend** | React, React Router Dom, TailwindCSS, Framer Motion, Lucide Icons |
-| **Backend** | Node.js, Express.js, Socket.io, Multer |
+| **Backend** | Node.js, Express.js, Socket.io, Cloudinary (via Multer) |
 | **Database** | MongoDB (Mongoose Schema mapping) |
-| **Integrations** | Jitsi Meet WebRTC, Canvas Confetti |
+| **Integrations** | Jitsi Meet WebRTC, Canvas Confetti, Groq AI API |
+| **Operations** | GitHub Actions CI, Express Rate Limiting |
 
 ---
 
@@ -45,12 +46,20 @@ Create a `.env` file in the `server/` directory:
 ```env
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
+GROQ_API_KEY=your_groq_api_key
+
+# Jitsi Config
 JITSI_TENANT=your_jitsi_tenant_id
 JITSI_KID=your_jitsi_kid
 JITSI_API_KEY=your_jitsi_api_key
-JITSI_PRIVATE_KEY_PATH=./jitsi-private-key.pem
+JITSI_PRIVATE_KEY="your_jitsi_private_key_string"
+
+# Cloudinary Config (Required for file uploads on ephemeral hosting like Render)
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
-*Note: Ensure your `jitsi-private-key.pem` file is placed directly in the `server/` directory.*
+*Note: The Jitsi private key is read directly from the environment variable `JITSI_PRIVATE_KEY` (formatted with `\n` characters) for easier deployment on Render/Vercel.*
 
 Start the backend server:
 ```bash

@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import rateLimit from 'express-rate-limit';
 
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -18,6 +19,8 @@ import quizRoutes from "./routes/quizRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { scheduleSessionReminders } from "./utils/sessionReminder.js";
 import videoRoutes from "./routes/videoRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 
 
 dotenv.config();
@@ -57,7 +60,17 @@ app.use((req, res, next) => {
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit each IP to 200 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use(limiter);
+
 // ✅ Routes
+app.get("/health", (req, res) => res.status(200).json({ status: "OK" }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/match', matchRoutes);
@@ -68,6 +81,8 @@ app.use("/api/quizzes", quizRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/connection", connectionRoutes);
 app.use("/api/video", videoRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/contact", contactRoutes);
 
 
 // ✅ Socket.IO Logic

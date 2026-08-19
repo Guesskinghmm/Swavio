@@ -14,7 +14,7 @@ const sessionSchema = new mongoose.Schema(
     time: { type: String }, // ❌ Make optional or remove completely
 
     notes: { type: String },
-    completed: { type: Boolean, default: false },
+    status: { type: String, enum: ["pending", "completed", "cancelled"], default: "pending" },
     rating: { type: Number, default: 0 },
     feedback: { type: String, default: "" },
   },

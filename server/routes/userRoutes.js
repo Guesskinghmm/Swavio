@@ -1,46 +1,23 @@
 import express from "express";
-import multer from "multer";
-import path from "path";
-import {
-  getUserProfile,
-  updateUserProfile,
-  getAllUsers,
-  getUserById,
-  rateUser,
-  deleteProfilePicture,
-} from "../controllers/userController.js";
-import { protect as auth } from "../middleware/authMiddleware.js";
-import User from "../models/User.js";
-
-const router = express.Router();
-
-// ✅ Multer config with file size limit
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB max
-});
+import { upload } from "../middleware/uploadMiddleware.js";
 
 // ✅ Get all users
 router.get("/", getAllUsers);
 
 // ✅ Get logged-in user's profile
-router.get("/profile/:userId", getUserProfile);
+router.get("/profile/:userId", auth, getUserProfile);
 
 // ✅ Get user by ID (must be after /profile)
-router.get("/:id", getUserById);
+router.get("/:id", auth, getUserById);
 
 // ✅ Rate user
 router.post("/rate/:userId", auth, rateUser);
 
 // ✅ Update user with image upload
-router.put("/:userId", upload.single("profilePicture"), updateUserProfile);
+router.put("/:userId", auth, upload.single("profilePicture"), updateUserProfile);
 
 // ✅ Update user without file upload (quick edit)
-router.put("/edit/:id", async (req, res) => {
+router.put("/edit/:id", auth, async (req, res) => {
   try {
     const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -52,6 +29,6 @@ router.put("/edit/:id", async (req, res) => {
 });
 
 // ✅ Delete profile picture
-router.delete("/profile-picture/:userId", deleteProfilePicture);
+router.delete("/profile-picture/:userId", auth, deleteProfilePicture);
 
 export default router;

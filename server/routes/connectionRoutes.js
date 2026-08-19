@@ -4,10 +4,12 @@ import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import { onlineUsers } from "../index.js";
 
+import { protect } from "../middleware/authMiddleware.js";
+
 const router = express.Router();
 
 // 📩 Send a connection request (with DB Notification + Real-time)
-router.post("/request", async (req, res) => {
+router.post("/request", protect, async (req, res) => {
   try {
     const { from, to } = req.body;
 
@@ -49,7 +51,7 @@ router.post("/request", async (req, res) => {
 });
 
 // 📥 Get pending requests (received)
-router.get("/pending/:userId", async (req, res) => {
+router.get("/pending/:userId", protect, async (req, res) => {
   try {
     const { userId } = req.params;
     const pending = await Connection.find({
@@ -64,7 +66,7 @@ router.get("/pending/:userId", async (req, res) => {
 });
 
 // 📤 Get sent pending requests
-router.get("/pending/sent/:userId", async (req, res) => {
+router.get("/pending/sent/:userId", protect, async (req, res) => {
   try {
     const { userId } = req.params;
     const sent = await Connection.find({
@@ -79,7 +81,7 @@ router.get("/pending/sent/:userId", async (req, res) => {
 });
 
 // ✅ Get accepted connections
-router.get("/accepted/:userId", async (req, res) => {
+router.get("/accepted/:userId", protect, async (req, res) => {
   try {
     const { userId } = req.params;
     const accepted = await Connection.find({
@@ -95,7 +97,7 @@ router.get("/accepted/:userId", async (req, res) => {
 });
 
 // 🟢 Accept a request (✔️ fixed version)
-router.put("/accept/:id", async (req, res) => {
+router.put("/accept/:id", protect, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -133,7 +135,7 @@ router.put("/accept/:id", async (req, res) => {
 });
 
 // ❌ Reject/Delete a connection
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", protect, async (req, res) => {
   try {
     const { id } = req.params;
     await Connection.findByIdAndDelete(id);

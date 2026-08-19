@@ -1,7 +1,7 @@
-const Chat = require("../models/Chat");
-const User = require("../models/User");
+import Chat from "../models/Chat.js";
+import User from "../models/User.js";
 
-exports.accessChat = async (req, res) => {
+export const accessChat = async (req, res) => {
   const { userId, partnerId } = req.body;
 
   if (!userId || !partnerId) {
@@ -23,7 +23,7 @@ exports.accessChat = async (req, res) => {
   }
 };
 
-exports.getUserChats = async (req, res) => {
+export const getUserChats = async (req, res) => {
   try {
     const chats = await Chat.find({ users: req.params.userId })
       .populate("users", "fullName email profilePicture")

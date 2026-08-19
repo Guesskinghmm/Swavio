@@ -115,7 +115,7 @@ export const completeSession = async (req, res) => {
 
     const session = await Session.findByIdAndUpdate(
       req.params.id,
-      { completed: true, rating, feedback },
+      { status: "completed", rating, feedback },
       { new: true }
     );
 

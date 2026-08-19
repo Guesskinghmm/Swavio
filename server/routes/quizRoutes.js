@@ -10,10 +10,10 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/generate", generateQuiz);
-router.post("/submit", submitQuiz);
-router.get("/last/:userId", getLastQuiz);
-router.get("/leaderboard", getLeaderboard);
-router.get("/history/:userId", getUserQuizHistory);
+router.post("/generate", protect, generateQuiz);
+router.post("/submit", protect, submitQuiz);
+router.get("/last/:userId", protect, getLastQuiz);
+router.get("/leaderboard", protect, getLeaderboard);
+router.get("/history/:userId", protect, getUserQuizHistory);
 
 export default router;

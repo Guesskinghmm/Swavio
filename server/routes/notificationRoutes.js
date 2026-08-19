@@ -1,10 +1,12 @@
 import express from "express";
 import Notification from "../models/Notification.js";
 
+import { protect } from "../middleware/authMiddleware.js";
+
 const router = express.Router();
 
 // ✅ Get all notifications for a user
-router.get("/:userId", async (req, res) => {
+router.get("/:userId", protect, async (req, res) => {
   try {
     const { userId } = req.params;
     const notifications = await Notification.find({ user: userId }).sort({ createdAt: -1 });
@@ -15,7 +17,7 @@ router.get("/:userId", async (req, res) => {
 });
 
 // ✅ Mark single notification as read
-router.put("/:id/read", async (req, res) => {
+router.put("/:id/read", protect, async (req, res) => {
   try {
     const { id } = req.params;
     const notif = await Notification.findByIdAndUpdate(id, { isRead: true }, { new: true });
@@ -26,7 +28,7 @@ router.put("/:id/read", async (req, res) => {
 });
 
 // ✅ Mark all notifications as read
-router.put("/:userId/read-all", async (req, res) => {
+router.put("/:userId/read-all", protect, async (req, res) => {
   try {
     const { userId } = req.params;
     await Notification.updateMany({ user: userId }, { isRead: true });
@@ -36,7 +38,7 @@ router.put("/:userId/read-all", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", protect, async (req, res) => {
   try {
     const { id } = req.params;
     await Notification.findByIdAndDelete(id);
@@ -46,7 +48,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:userId/clear", async (req, res) => {
+router.delete("/:userId/clear", protect, async (req, res) => {
   try {
     const { userId } = req.params;
     await Notification.deleteMany({ user: userId });
