@@ -37,10 +37,15 @@ export default function Dashboard() {
         if (quizRes.status === 200) setLastQuiz(quizRes.data);
       } catch (err) {
         console.error("Dashboard API Error", err);
+        if (err.response && err.response.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          navigate("/login");
+        }
       }
     }
     fetchData();
-  }, [userId]);
+  }, [userId, navigate]);
 
   if (!user) {
     return (
