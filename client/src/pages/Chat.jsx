@@ -26,7 +26,7 @@ function formatTime(date) {
 }
 
 function FilePreviewMessage({ fileUrl }) {
-  const fullUrl = `${SERVER_URL}${fileUrl}`;
+  const fullUrl = fileUrl.startsWith("http") ? fileUrl : `${SERVER_URL}${fileUrl}`;
   const ext = fileUrl.split(".").pop().toLowerCase();
 
   if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext))

@@ -6,7 +6,7 @@ import Notification from '../models/Notification.js';
 // so req.file and req.body are fully parsed by the time this runs.
 export const sendMessage = async (req, res) => {
   const { senderId, receiverId, text, senderName } = req.body;
-  const fileUrl = req.file ? `/uploads/${req.file.filename}` : '';
+  const fileUrl = req.file ? req.file.path : '';
 
   try {
     const message = await Message.create({ senderId, receiverId, text, fileUrl });
