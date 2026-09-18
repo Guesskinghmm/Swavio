@@ -10,11 +10,11 @@ export const accessChat = async (req, res) => {
 
   try {
     let chat = await Chat.findOne({
-      users: { $all: [userId, partnerId] },
-    }).populate("users", "fullName email profilePicture");
+      participants: { $all: [userId, partnerId] },
+    }).populate("participants", "fullName email profilePicture");
 
     if (!chat) {
-      chat = await Chat.create({ users: [userId, partnerId] });
+      chat = await Chat.create({ participants: [userId, partnerId] });
     }
 
     res.status(200).json(chat);
@@ -25,8 +25,8 @@ export const accessChat = async (req, res) => {
 
 export const getUserChats = async (req, res) => {
   try {
-    const chats = await Chat.find({ users: req.params.userId })
-      .populate("users", "fullName email profilePicture")
+    const chats = await Chat.find({ participants: req.params.userId })
+      .populate("participants", "fullName email profilePicture")
       .sort({ updatedAt: -1 });
 
     res.status(200).json(chats);

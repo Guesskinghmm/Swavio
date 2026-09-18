@@ -9,4 +9,7 @@ const connectionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+connectionSchema.index({ user1: 1, user2: 1 });
+connectionSchema.index({ status: 1 });
+
 export default mongoose.model("Connection", connectionSchema);

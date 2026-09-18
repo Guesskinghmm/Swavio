@@ -10,7 +10,6 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     loginStart: (state) => {
-      // Intentionally left blank for basic implementation
     },
     loginSuccess: (state, action) => {
       state.user = action.payload.user;

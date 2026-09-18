@@ -2,7 +2,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import userReducer from "./features/userSlice";
 import { createSlice } from "@reduxjs/toolkit";
 
-// ✅ Call slice to store incoming call data
 const callSlice = createSlice({
   name: "call",
   initialState: { incomingCall: null },

@@ -1,8 +1,6 @@
 import User from "../models/User.js";
 import Session from "../models/sessionModel.js";
 import mongoose from "mongoose";
-import fs from "fs";
-import path from "path";
 
 // 🔹 Helper for Badge Calculation
 const getBadgeData = (sessionCount, skillsToTeach, skillsToLearn, rating) => {
@@ -159,12 +157,6 @@ export const updateUserProfile = async (req, res) => {
     // ✅ Profile Picture Handling
     if (req.file) {
       updateFields.profilePicture = req.file.path; // ✅ Uses the full Cloudinary URL
-    } else if (profilePicture && profilePicture.startsWith("data:image")) {
-      const base64Data = profilePicture.replace(/^data:image\/\w+;base64,/, "");
-      const buffer = Buffer.from(base64Data, "base64");
-      const filename = `uploads/${Date.now()}-profile.png`;
-      fs.writeFileSync(filename, buffer);
-      updateFields.profilePicture = `/${filename}`;
     } else if (profilePicture) {
       updateFields.profilePicture = profilePicture;
     }
@@ -206,13 +198,7 @@ export const deleteProfilePicture = async (req, res) => {
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Delete file if it exists and is not default
-    if (user.profilePicture && !user.profilePicture.includes("default-avatar.png")) {
-      const filePath = path.join(process.cwd(), user.profilePicture);
-      fs.unlink(filePath, (err) => {
-        if (err) console.error("❌ Failed to delete file:", err);
-      });
-    }
+    // Assuming Cloudinary handles deletion or we don't care about old images for now
 
     user.profilePicture = "/default-avatar.png";
     await user.save();

@@ -26,6 +26,9 @@ export const register = async (req, res) => {
 
     res.status(201).json({ token, user });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ msg: 'Email already exists' });
+    }
     console.error(error);
     res.status(500).json({ msg: 'Server error' });
   }

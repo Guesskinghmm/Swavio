@@ -1,5 +1,5 @@
 import User from '../models/User.js';
-import Match from '../models/Match.js';
+import Connection from '../models/Connection.js';
 
 // 🔍 Find matching users based on intent (learn/teach) and skill
 export const findMatches = async (req, res) => {
@@ -48,7 +48,7 @@ export const createMatchRequest = async (req, res) => {
   try {
     const { user1, user2 } = req.body;
 
-    const exists = await Match.findOne({
+    const exists = await Connection.findOne({
       $or: [
         { user1, user2 },
         { user1: user2, user2: user1 }
@@ -57,7 +57,7 @@ export const createMatchRequest = async (req, res) => {
 
     if (exists) return res.status(400).json({ message: 'Match already exists' });
 
-    const match = await Match.create({ user1, user2 });
+    const match = await Connection.create({ user1, user2 });
     res.status(201).json(match);
   } catch (err) {
     console.error(err);
@@ -69,7 +69,7 @@ export const createMatchRequest = async (req, res) => {
 export const deleteMatch = async (req, res) => {
   try {
     const { matchId } = req.params;
-    await Match.findByIdAndDelete(matchId);
+    await Connection.findByIdAndDelete(matchId);
     res.status(200).json({ message: 'Match deleted' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete match' });
@@ -81,7 +81,7 @@ export const getMyMatches = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const matches = await Match.find({
+    const matches = await Connection.find({
       $or: [{ user1: userId }, { user2: userId }]
     }).populate('user1 user2', '-password');
 
