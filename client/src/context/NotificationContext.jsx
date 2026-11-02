@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import { socket } from "../socket";
 
 const NotificationContext = createContext(null);
@@ -10,16 +10,21 @@ export function NotificationProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const fetchNotifications = useCallback(() => {
-    if (!userId) { setLoading(false); return; }
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}`)
+    api
+      .get(`/api/notifications/${userId}`)
       .then((res) => setNotifications(res.data ?? []))
-      .catch((err) => console.error("Error fetching notifications:", err))
+      .catch((err) => console.error("Error fetching notifications:", err.message))
       .finally(() => setLoading(false));
   }, [userId]);
 
-  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const handler = (newNotif) => {
@@ -34,41 +39,41 @@ export function NotificationProvider({ children }) {
 
   const markRead = useCallback(async (notifId) => {
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/notifications/${notifId}/read`);
+      await api.put(`/api/notifications/${notifId}/read`);
       setNotifications((prev) =>
         prev.map((n) => (n._id === notifId ? { ...n, isRead: true } : n))
       );
     } catch (err) {
-      console.error("Error marking notification read:", err);
+      console.error("Error marking notification read:", err.message);
     }
   }, []);
 
   const markAllRead = useCallback(async () => {
     if (!userId) return;
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}/read-all`);
+      await api.put(`/api/notifications/${userId}/read-all`);
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {
-      console.error("Error marking all read:", err);
+      console.error("Error marking all read:", err.message);
     }
   }, [userId]);
 
   const deleteOne = useCallback(async (notifId) => {
     try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/notifications/${notifId}`);
+      await api.delete(`/api/notifications/${notifId}`);
       setNotifications((prev) => prev.filter((n) => n._id !== notifId));
     } catch (err) {
-      console.error("Error deleting notification:", err);
+      console.error("Error deleting notification:", err.message);
     }
   }, []);
 
   const clearAll = useCallback(async () => {
     if (!userId) return;
     try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/notifications/${userId}/clear`);
+      await api.delete(`/api/notifications/${userId}/clear`);
       setNotifications([]);
     } catch (err) {
-      console.error("Error clearing notifications:", err);
+      console.error("Error clearing notifications:", err.message);
     }
   }, [userId]);
 
@@ -76,7 +81,16 @@ export function NotificationProvider({ children }) {
 
   return (
     <NotificationContext.Provider
-      value={{ notifications, loading, unreadCount, fetchNotifications, markRead, markAllRead, deleteOne, clearAll }}
+      value={{
+        notifications,
+        loading,
+        unreadCount,
+        fetchNotifications,
+        markRead,
+        markAllRead,
+        deleteOne,
+        clearAll,
+      }}
     >
       {children}
     </NotificationContext.Provider>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import axios from "axios";
+import api from "../api/axios";
 import EmojiPicker from "emoji-picker-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -25,21 +25,38 @@ function formatTime(date) {
   return new Date(date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function FilePreviewMessage({ fileUrl }) {
-  const fullUrl = fileUrl.startsWith("http") ? fileUrl : `${SERVER_URL}${fileUrl}`;
-  const ext = fileUrl.split(".").pop().toLowerCase();
+function FilePreviewMessage({ fileUrl, mimeType }) {
+  // Cloudinary URLs are absolute; legacy /uploads/… need the API prefix
+  const API_URL = process.env.REACT_APP_API_URL || "";
+  const fullUrl = fileUrl.startsWith("http") ? fileUrl : `${API_URL}${fileUrl}`;
 
-  if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext))
+  // Determine rendering from stored mimeType first, then fallback to extension
+  const mime = mimeType || "";
+  const ext  = (fileUrl.split(".").pop() || "").toLowerCase().split("?")[0];
+
+  const isImage = mime.startsWith("image/") || ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
+  const isPdf   = mime === "application/pdf" || ext === "pdf";
+
+  if (isImage)
     return (
       <img
         src={fullUrl}
         alt="attachment"
         className="max-w-xs rounded-lg border border-white/20 mb-1"
+        onError={(e) => { e.currentTarget.style.display = "none"; }}
       />
     );
-  if (["mp4", "webm", "ogg"].includes(ext))
+  if (isPdf)
     return (
-      <video src={fullUrl} controls className="max-w-xs rounded-lg mb-1" />
+      <a
+        href={fullUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 text-xs underline opacity-90 mb-1"
+      >
+        <FileText size={14} />
+        PDF Document
+      </a>
     );
   return (
     <a
@@ -49,7 +66,7 @@ function FilePreviewMessage({ fileUrl }) {
       className="flex items-center gap-2 text-xs underline opacity-90 mb-1"
     >
       <FileText size={14} />
-      {ext.toUpperCase()} attachment
+      {ext.toUpperCase() || "File"} attachment
     </a>
   );
 }
@@ -123,8 +140,8 @@ export default function Chat() {
   // Fetch current user details
   useEffect(() => {
     if (userId) {
-      axios
-        .get(`${SERVER_URL}/api/users/${userId}`)
+      api
+        .get(`/api/users/${userId}`)
         .then((r) => setCurrentUser(r.data))
         .catch((err) => console.error("Error fetching current user:", err));
     }
@@ -134,7 +151,7 @@ export default function Chat() {
   const fetchConnections = useCallback(async () => {
     if (!userId) return;
     try {
-      const res = await axios.get(`${SERVER_URL}/api/connection/accepted/${userId}`);
+      const res = await api.get(`/api/connection/accepted/${userId}`);
       setConnections(res.data || []);
     } catch (err) {
       console.error("Error fetching connections:", err);
@@ -145,7 +162,7 @@ export default function Chat() {
   const fetchNotifications = useCallback(async () => {
     if (!userId) return;
     try {
-      const res = await axios.get(`${SERVER_URL}/api/notifications/${userId}`);
+      const res = await api.get(`/api/notifications/${userId}`);
       setNotifications(res.data || []);
     } catch (err) {
       console.error("Error fetching notifications:", err);
@@ -169,7 +186,7 @@ export default function Chat() {
         setActiveChatUser(otherUser);
       } else {
         // Fallback: direct fetch if connection list is not loaded/matched
-        axios.get(`${SERVER_URL}/api/users/${receiverId}`)
+        api.get(`/api/users/${receiverId}`)
           .then((res) => setActiveChatUser(res.data))
           .catch((err) => console.error("Error fetching fallback user:", err));
       }
@@ -182,7 +199,7 @@ export default function Chat() {
   const markMessagesAsReadFn = useCallback(async (senderId) => {
     if (!userId || !senderId) return;
     try {
-      await axios.put(`${SERVER_URL}/api/messages/${senderId}/${userId}/read`);
+      await api.put(`/api/messages/${senderId}/${userId}/read`);
       // Update global notification components across the app
       window.dispatchEvent(new CustomEvent("notifications-updated"));
       // Refresh local notifications list
@@ -198,8 +215,8 @@ export default function Chat() {
       setMessages([]);
       return;
     }
-    axios
-      .get(`${SERVER_URL}/api/messages/${userId}/${activeChatUser._id}`)
+    api
+      .get(`/api/messages/${userId}/${activeChatUser._id}`)
       .then((res) => {
         setMessages(res.data);
         setIsAtBottom(true);
@@ -279,7 +296,7 @@ export default function Chat() {
     if (selectedFile) formData.append("file", selectedFile);
 
     try {
-      const res = await axios.post(`${SERVER_URL}/api/messages`, formData);
+      const res = await api.post(`/api/messages`, formData);
       socket.emit("sendMessage", res.data);
       setMessages((prev) => [...prev, res.data]);
       setMessage("");
@@ -296,7 +313,7 @@ export default function Chat() {
   const clearChat = async () => {
     if (!activeChatUser?._id) return;
     try {
-      await axios.delete(`${SERVER_URL}/api/messages/${userId}/${activeChatUser._id}`);
+      await api.delete(`/api/messages/${userId}/${activeChatUser._id}`);
       setMessages([]);
     } catch (err) {
       console.error("Clear chat error:", err);
@@ -489,7 +506,7 @@ export default function Chat() {
                       }`}
                       style={{ boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }}
                     >
-                      {msg.fileUrl && <FilePreviewMessage fileUrl={msg.fileUrl} />}
+                      {msg.fileUrl && <FilePreviewMessage fileUrl={msg.fileUrl} mimeType={msg.mimeType} />}
                       {msg.text && <MessageContent text={msg.text} isMine={isMine} />}
                       <p className={`text-[10px] mt-1 text-right ${isMine ? "text-white/60" : "text-gray-400 dark:text-gray-500"}`}>
                         {formatTime(msg.createdAt)}
@@ -573,7 +590,7 @@ export default function Chat() {
                   type="file"
                   ref={fileInputRef}
                   onChange={(e) => setSelectedFile(e.target.files[0] || null)}
-                  accept=".pdf,image/*,video/*,.zip,.rar,.doc,.docx"
+                  accept=".pdf,image/*"
                   hidden
                 />
                 <button

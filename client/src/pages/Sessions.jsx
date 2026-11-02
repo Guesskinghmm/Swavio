@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import {
   Calendar,
   Clock,
@@ -50,7 +50,7 @@ export default function Sessions() {
   // Fetch partners from established connections
   const fetchStudents = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/connection/accepted/${userId}`);
+      const res = await api.get(`/api/connection/accepted/${userId}`);
       const partnersList = (res.data || [])
         .map((conn) => {
           const otherUser = conn.user1?._id === userId ? conn.user2 : conn.user1;
@@ -65,7 +65,7 @@ export default function Sessions() {
 
   const fetchSessions = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/sessions/${userId}`);
+      const res = await api.get(`/api/sessions/${userId}`);
       setSessions(res.data);
     } catch (err) {
       console.error("❌ Error fetching sessions", err);
@@ -109,8 +109,8 @@ export default function Sessions() {
 
     try {
       editId
-        ? await axios.put(`${process.env.REACT_APP_API_URL}/api/sessions/${editId}`, payload)
-        : await axios.post(`${process.env.REACT_APP_API_URL}/api/sessions`, payload);
+        ? await api.put(`/api/sessions/${editId}`, payload)
+        : await api.post(`/api/sessions`, payload);
 
       fetchSessions();
       resetForm();
@@ -150,7 +150,7 @@ export default function Sessions() {
   const handleDelete = async (id) => {
     if (!window.confirm("⚠️ Are you sure you want to delete this session?")) return;
     try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/sessions/${id}`);
+      await api.delete(`/api/sessions/${id}`);
       fetchSessions();
     } catch (err) {
       console.error("❌ Error deleting session", err);
@@ -166,8 +166,8 @@ export default function Sessions() {
         payload.rating = rating;
         payload.feedback = feedback;
       }
-      await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/sessions/${selectedSession._id}/complete`,
+      await api.put(
+        `/api/sessions/${selectedSession._id}/complete`,
         payload
       );
       setShowModal(false);

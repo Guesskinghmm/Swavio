@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import { Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -11,9 +11,9 @@ export default function Notifications() {
 
   // Fetch notifications only once when opened
   useEffect(() => {
-    if (isOpen && notifications.length === 0) {
-      axios
-        .get(`${process.env.REACT_APP_API_URL}/api/dashboard/${userId}`)
+    if (isOpen && notifications.length === 0 && userId) {
+      api
+        .get(`/api/notifications/${userId}`)
         .then((res) => setNotifications(res.data))
         .catch((err) => console.error("Error fetching notifications:", err));
     }
@@ -43,7 +43,7 @@ export default function Notifications() {
 
   const markAsRead = async (id, link) => {
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/notifications/${id}/read`);
+      await api.put(`/api/notifications/${id}/read`);
       window.location.href = link || "/";
     } catch (err) {
       console.error("Error marking notification as read:", err);

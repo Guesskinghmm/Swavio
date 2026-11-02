@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, Award, ArrowRight } from "lucide-react";
@@ -28,12 +28,12 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/dashboard/${userId}`);
+        const res = await api.get(`/api/dashboard/${userId}`);
         setUser(res.data.user);
         setSessions(res.data.sessions);
         setConnections(res.data.connections);
 
-        const quizRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/quizzes/last/${userId}`);
+        const quizRes = await api.get(`/api/quizzes/last/${userId}`);
         if (quizRes.status === 200) setLastQuiz(quizRes.data);
       } catch (err) {
         console.error("Dashboard API Error", err);

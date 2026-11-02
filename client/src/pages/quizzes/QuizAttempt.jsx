@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../api/axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Loader2, CheckCircle2, XCircle, Brain, ArrowRight, Award, AlertCircle, ChevronRight } from "lucide-react";
@@ -19,8 +19,8 @@ export default function QuizAttempt() {
 
   useEffect(() => {
     console.log(`📚 QuizAttempt: fetching questions for skill = "${skill}"`);
-    axios
-      .post(`${process.env.REACT_APP_API_URL}/api/quizzes/generate`, { skill })
+    api
+      .post(`/api/quizzes/generate`, { skill })
       .then(({ data }) => {
         if (Array.isArray(data) && data.length > 0) {
           console.log(`✅ Quiz loaded: ${data.length} questions`);
@@ -55,8 +55,8 @@ export default function QuizAttempt() {
 
   const handleSubmit = () => {
     setSubmitting(true);
-    axios
-      .post(`${process.env.REACT_APP_API_URL}/api/quizzes/submit`, {
+    api
+      .post(`/api/quizzes/submit`, {
         userId: localStorage.getItem("userId"),
         skill,
         questions,

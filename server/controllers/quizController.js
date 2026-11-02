@@ -1,10 +1,9 @@
 import Groq from "groq-sdk";
 import QuizResult from "../models/QuizResult.js";
+import Quiz from "../models/Quiz.js";
 import User from "../models/User.js";
 
-// ✅ Groq client — reads API key from environment
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-console.log("🤖 Groq SDK initialised (model: llama-3.3-70b-versatile)");
 
 // ── Generate Quiz ─────────────────────────────────────────────────────────────
 export const generateQuiz = async (req, res) => {
@@ -12,7 +11,9 @@ export const generateQuiz = async (req, res) => {
     const { skill } = req.body;
     if (!skill) return res.status(400).json({ error: "Skill is required" });
 
-    console.log(`📚 Generating quiz for skill: "${skill}"`);
+    if (!process.env.GROQ_API_KEY) {
+      return res.status(503).json({ error: "Groq AI service is not configured. Missing GROQ_API_KEY." });
+    }
 
     const systemPrompt = `You are an expert educator and quiz creator.
 Generate EXACTLY 5 high-quality multiple-choice questions about: ${skill}.
@@ -41,24 +42,16 @@ Rules you MUST follow:
     });
 
     let raw = completion.choices[0]?.message?.content?.trim() || "";
-
-    // Strip any stray markdown wrappers the model might accidentally add
     raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/g, "").trim();
-
-    console.log("📝 Groq raw response (first 200 chars):", raw.slice(0, 200));
 
     let parsed;
     try {
       parsed = JSON.parse(raw);
     } catch (parseErr) {
       console.error("❌ Groq JSON parse error:", parseErr.message);
-      console.error("   Raw output was:", raw);
-      return res.status(502).json({
-        error: "AI returned malformed JSON. Please try again.",
-      });
+      return res.status(502).json({ error: "AI returned malformed JSON. Please try again." });
     }
 
-    // Validate & sanitise each question
     const quizData = parsed
       .filter(
         (q) =>
@@ -66,18 +59,13 @@ Rules you MUST follow:
           Array.isArray(q.options) &&
           q.options.length === 4 &&
           q.correctAnswer &&
-          q.options.includes(q.correctAnswer) // correctAnswer must actually be one of the options
+          q.options.includes(q.correctAnswer)
       )
       .slice(0, 5);
 
-    if (quizData.length === 0) {
-      console.error("❌ Groq returned no valid questions. Parsed:", parsed);
-      return res.status(502).json({
-        error: "AI returned no valid questions. Please retry.",
-      });
-    }
+    if (quizData.length === 0)
+      return res.status(502).json({ error: "AI returned no valid questions. Please retry." });
 
-    console.log(`✅ Quiz ready: ${quizData.length} questions for "${skill}"`);
     return res.json(quizData);
   } catch (error) {
     console.error("❌ Groq Quiz Generation Error:", error?.message || error);
@@ -88,15 +76,16 @@ Rules you MUST follow:
 // ── Submit Quiz Result ────────────────────────────────────────────────────────
 export const submitQuiz = async (req, res) => {
   try {
-    const { questions, answers, userId, skill } = req.body;
+    const { questions, answers, userId, skill, quizId } = req.body;
 
-    if (!userId || !questions || !answers) {
-      return res.status(400).json({ error: "Missing data" });
-    }
+    if (!userId || !questions || !answers)
+      return res.status(400).json({ error: "Missing required quiz submission data" });
+
+    // Ownership check: userId in body must match authenticated user
+    if (req.user._id.toString() !== userId.toString())
+      return res.status(403).json({ error: "Forbidden: userId does not match authenticated user." });
 
     let score = 0;
-
-    // ✅ Score against correctAnswer (new Groq schema field)
     const solutions = questions.map((q, i) => {
       const correct = q.correctAnswer === answers[i];
       if (correct) score++;
@@ -111,15 +100,19 @@ export const submitQuiz = async (req, res) => {
       answers: solutions,
     });
 
-    res.json({
-      success: true,
-      score,
-      total: questions.length,
-      solutions,
-      id: result._id,
-    });
+    // Mark pending assigned Quiz as completed if matching
+    if (quizId) {
+      await Quiz.findByIdAndUpdate(quizId, { status: "completed" });
+    } else if (skill) {
+      await Quiz.findOneAndUpdate(
+        { userId, skill, status: "pending" },
+        { status: "completed" }
+      );
+    }
+
+    res.json({ success: true, score, total: questions.length, solutions, id: result._id });
   } catch (err) {
-    console.error("❌ Error saving quiz:", err);
+    console.error("❌ Error saving quiz:", err.message);
     res.status(500).json({ error: "Failed to submit quiz" });
   }
 };
@@ -128,13 +121,15 @@ export const submitQuiz = async (req, res) => {
 export const getLastQuiz = async (req, res) => {
   try {
     const { userId } = req.params;
+
+    // Ownership check
+    if (req.user._id.toString() !== userId.toString())
+      return res.status(403).json({ error: "Forbidden: Cannot view another user's quiz result." });
+
     const lastResult = await QuizResult.findOne({ userId }).sort({ createdAt: -1 });
-
-    if (!lastResult) return res.json(null);
-
-    res.json(lastResult);
+    res.json(lastResult || null);
   } catch (err) {
-    console.error("❌ Error fetching last quiz result:", err);
+    console.error("❌ Error fetching last quiz result:", err.message);
     res.status(500).json({ error: "Failed to fetch last quiz result" });
   }
 };
@@ -144,18 +139,36 @@ export const getUserQuizHistory = async (req, res) => {
   try {
     const { userId } = req.params;
 
+    // Ownership check
+    if (req.user._id.toString() !== userId.toString())
+      return res.status(403).json({ error: "Forbidden: Cannot view another user's quiz history." });
+
     const quizzes = await QuizResult.find({ userId })
       .select("skill score total createdAt")
       .sort({ createdAt: -1 });
 
     const user = await User.findById(userId).select("fullName");
 
-    res.json({
-      user: user ? user.fullName : "Unknown User",
-      quizzes,
-    });
+    res.json({ user: user ? user.fullName : "Unknown User", quizzes });
   } catch (err) {
-    console.error("❌ Quiz History Error:", err);
+    console.error("❌ Quiz History Error:", err.message);
     res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// ── Get Pending Assigned Quizzes ──────────────────────────────────────────────
+export const getPendingQuizzes = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (req.user._id.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Forbidden: Cannot view another user's assigned quizzes." });
+    }
+
+    const pending = await Quiz.find({ userId, status: "pending" }).sort({ createdAt: -1 });
+    res.json(pending);
+  } catch (err) {
+    console.error("getPendingQuizzes error:", err.message);
+    res.status(500).json({ error: "Failed to fetch pending quizzes" });
   }
 };

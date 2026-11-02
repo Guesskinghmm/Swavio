@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Video,
@@ -40,9 +40,9 @@ export default function VideoCall({ userId, receiverId, sendMessageFn, onEndCall
 
     const fetchMeeting = async () => {
       try {
-        const { data } = await axios.get(
-          `${process.env.REACT_APP_API_URL}/api/video/create-room`
-        );
+        const { data } = await api.get("/api/video/create-room", {
+          params: receiverId ? { receiverId } : {},
+        });
         if (cancelled) return;
 
         setMeetingUrl(data.meetingUrl);

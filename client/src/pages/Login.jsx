@@ -1,9 +1,9 @@
 import { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import api from "../api/axios";
+import { useNavigate, Link } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AlertCircle, Loader2 } from "lucide-react";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 
 export default function Login() {
   const [form, setForm]       = useState({ email: "", password: "" });
@@ -19,10 +19,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/auth/login`,
-        form
-      );
+      const res = await api.post("/api/auth/login", form);
       localStorage.setItem("token",    res.data.token);
       localStorage.setItem("userId",   res.data.user._id);
       localStorage.setItem("fullName", res.data.user.fullName);
@@ -112,6 +109,9 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          {/* Google Sign In */}
+          <GoogleAuthButton text="Sign in with Google" />
         </div>
 
         {/* Sign-up link */}

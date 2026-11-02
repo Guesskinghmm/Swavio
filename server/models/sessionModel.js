@@ -2,21 +2,22 @@ import mongoose from "mongoose";
 
 const sessionSchema = new mongoose.Schema(
   {
-    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    teacherId:   { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     teacherName: { type: String, required: true },
 
-    studentId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    studentId:   { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     studentName: { type: String, required: true },
 
-    skill: { type: String, required: true },
-
-    date: { type: Date, required: true }, // ✅ Store as proper Date
-    time: { type: String }, // ❌ Make optional or remove completely
-
-    notes: { type: String },
-    status: { type: String, enum: ["pending", "completed", "cancelled"], default: "pending" },
-    rating: { type: Number, default: 0 },
+    skill:    { type: String, required: true },
+    date:     { type: Date, required: true },
+    time:     { type: String },       // kept for backward compat; derived from date
+    notes:    { type: String },
+    status:   { type: String, enum: ["pending", "completed", "cancelled"], default: "pending" },
+    rating:   { type: Number, default: 0 },
     feedback: { type: String, default: "" },
+
+    // Idempotency flag — set to true once the 15-min reminder is fired
+    reminderSent: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

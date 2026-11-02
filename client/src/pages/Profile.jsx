@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import Cropper from "react-easy-crop";
 import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 import { motion, AnimatePresence } from "framer-motion";
@@ -128,8 +128,8 @@ export default function Profile() {
   // ── Fetch profile ──────────────────────────
   const fetchProfile = async () => {
     try {
-      const res      = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/users/profile/${loggedInUserId}`
+      const res      = await api.get(
+        `/api/users/profile/${loggedInUserId}`
       );
       const userData = res.data;
 

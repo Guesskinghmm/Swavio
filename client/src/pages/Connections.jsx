@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { User, Mail, Clock, Check, X, MessageCircle, Users } from "lucide-react";
@@ -17,9 +17,9 @@ export default function Connections() {
   const fetchConnections = async () => {
     try {
       const [pendingRes, sentRes, acceptedRes] = await Promise.all([
-        axios.get(`${process.env.REACT_APP_API_URL}/api/connection/pending/${userId}`),
-        axios.get(`${process.env.REACT_APP_API_URL}/api/connection/pending/sent/${userId}`),
-        axios.get(`${process.env.REACT_APP_API_URL}/api/connection/accepted/${userId}`),
+        api.get(`/api/connection/pending/${userId}`),
+        api.get(`/api/connection/pending/sent/${userId}`),
+        api.get(`/api/connection/accepted/${userId}`),
       ]);
       setPendingReceived(pendingRes.data || []);
       setPendingSent(sentRes.data     || []);
@@ -35,14 +35,14 @@ export default function Connections() {
 
   const handleAccept = async (id) => {
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/connection/accept/${id}`);
+      await api.put(`/api/connection/accept/${id}`);
       fetchConnections();
     } catch (err) { console.error("Failed to accept:", err); }
   };
 
   const handleReject = async (id) => {
     try {
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/connection/${id}`);
+      await api.delete(`/api/connection/${id}`);
       fetchConnections();
     } catch (err) { console.error("Failed to reject:", err); }
   };

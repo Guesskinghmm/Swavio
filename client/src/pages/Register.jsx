@@ -1,8 +1,9 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import { useNavigate, Link } from "react-router-dom";
 import logo from "../assets/logo.png";
 import { AlertCircle, Loader2 } from "lucide-react";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 
 export default function Register() {
   const [form, setForm]       = useState({ fullName: "", email: "", password: "" });
@@ -18,12 +19,10 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/auth/register`,
-        form
-      );
+      const res = await api.post("/api/auth/register", form);
       localStorage.setItem("token",  res.data.token);
       localStorage.setItem("userId", res.data.user._id);
+      localStorage.setItem("fullName", res.data.user.fullName || "");
       localStorage.setItem("user",   JSON.stringify(res.data.user));
       navigate("/dashboard");
     } catch (err) {
@@ -130,6 +129,9 @@ export default function Register() {
               )}
             </button>
           </form>
+
+          {/* Google Sign Up */}
+          <GoogleAuthButton text="Sign up with Google" />
         </div>
 
         {/* Sign-in link */}

@@ -1,9 +1,10 @@
 import express from "express";
 import ContactMessage from "../models/ContactMessage.js";
+import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ✅ Submit a contact form
+// ✅ Submit a contact form (Public)
 router.post("/", async (req, res) => {
   try {
     const { name, email, message } = req.body;
@@ -19,17 +20,18 @@ router.post("/", async (req, res) => {
       data: newMessage,
     });
   } catch (err) {
-    console.error("Error saving contact message:", err);
+    console.error("Error saving contact message:", err.message);
     res.status(500).json({ message: "Server error while sending message" });
   }
 });
 
 // ✅ Get all messages (Admin only)
-router.get("/", async (req, res) => {
+router.get("/", protect, adminOnly, async (req, res) => {
   try {
     const messages = await ContactMessage.find().sort({ createdAt: -1 });
     res.json(messages);
   } catch (err) {
+    console.error("Error fetching contact messages:", err.message);
     res.status(500).json({ message: "Error fetching messages" });
   }
 });

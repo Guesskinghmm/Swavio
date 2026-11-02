@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import api from "../api/axios";
 import { motion } from "framer-motion";
 import {
   UserPlus, MessageCircle, MapPin, Calendar,
@@ -23,8 +23,8 @@ export default function Matchmaking() {
   // Fetch current user's profile for interest-overlap comparison
   useEffect(() => {
     if (!userId) return;
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/users/${userId}`)
+    api
+      .get(`/api/users/${userId}`)
       .then((res) => setCurrentUser(res.data))
       .catch((err) => console.error("Failed to load current user profile:", err));
   }, [userId]);
@@ -32,8 +32,8 @@ export default function Matchmaking() {
   // Fetch accepted connection IDs once on mount
   useEffect(() => {
     if (!userId) return;
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/connection/accepted/${userId}`)
+    api
+      .get(`/api/connection/accepted/${userId}`)
       .then((res) => {
         const ids = new Set(
           (res.data || []).map((conn) => {
@@ -60,7 +60,7 @@ export default function Matchmaking() {
 
   const sendConnectionRequest = async (otherUserId) => {
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/api/connection/request`, {
+      await api.post(`/api/connection/request`, {
         from: userId, to: otherUserId,
       });
       navigate("/connections");
@@ -74,8 +74,8 @@ export default function Matchmaking() {
   const findMatches = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/match/${userId}`,
+      const res = await api.get(
+        `/api/match/${userId}`,
         { params: filters }
       );
       setMatches(res.data);
