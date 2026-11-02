@@ -1,19 +1,70 @@
 import Groq from "groq-sdk";
+import axios from "axios";
 import QuizResult from "../models/QuizResult.js";
 import Quiz from "../models/Quiz.js";
 import User from "../models/User.js";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Helper for dynamic educational fallback questions when API keys are not set or rate-limited
+function getFallbackQuestions(skill) {
+  return [
+    {
+      question: `What is the primary foundation or core objective of ${skill}?`,
+      options: [
+        `Mastering fundamental concepts and principles of ${skill}`,
+        `Memorizing arbitrary terminology without application`,
+        `Ignoring best practices and community guidelines`,
+        `Relying exclusively on third-party automation tools`,
+      ],
+      correctAnswer: `Mastering fundamental concepts and principles of ${skill}`,
+    },
+    {
+      question: `When applying ${skill} in a real-world scenario, which practice is recommended?`,
+      options: [
+        `Systematic problem analysis and step-by-step execution`,
+        `Skipping planning and directly implementing assumptions`,
+        `Avoiding documentation and peer collaboration`,
+        `Never validating outcomes or testing results`,
+      ],
+      correctAnswer: `Systematic problem analysis and step-by-step execution`,
+    },
+    {
+      question: `Which factor is most critical for long-term mastery in ${skill}?`,
+      options: [
+        `Consistent deliberate practice and continuous feedback`,
+        `One-time cramming of theoretical manuals`,
+        `Working in total isolation without external benchmarks`,
+        `Avoiding modern tools and emerging conventions`,
+      ],
+      correctAnswer: `Consistent deliberate practice and continuous feedback`,
+    },
+    {
+      question: `What is an effective troubleshooting strategy when encountering bottlenecks in ${skill}?`,
+      options: [
+        `Decomposing the problem into smaller, isolated components`,
+        `Restarting the entire project from scratch repeatedly`,
+        `Ignoring error patterns and hoping they disappear`,
+        `Accepting degraded performance as normal behavior`,
+      ],
+      correctAnswer: `Decomposing the problem into smaller, isolated components`,
+    },
+    {
+      question: `How does peer review or mentorship enhance proficiency in ${skill}?`,
+      options: [
+        `It surfaces blind spots and provides alternative perspectives`,
+        `It slows down progress without measurable benefit`,
+        `It replaces the need for personal study and practice`,
+        `It prevents learners from making independent decisions`,
+      ],
+      correctAnswer: `It surfaces blind spots and provides alternative perspectives`,
+    },
+  ];
+}
 
-// ── Generate Quiz ─────────────────────────────────────────────────────────────
+// ── Generate Quiz (Multi-Provider: Gemini, Groq, OpenRouter, with fallback) ────
 export const generateQuiz = async (req, res) => {
   try {
     const { skill } = req.body;
     if (!skill) return res.status(400).json({ error: "Skill is required" });
-
-    if (!process.env.GROQ_API_KEY) {
-      return res.status(503).json({ error: "Groq AI service is not configured. Missing GROQ_API_KEY." });
-    }
 
     const systemPrompt = `You are an expert educator and quiz creator.
 Generate EXACTLY 5 high-quality multiple-choice questions about: ${skill}.
@@ -34,42 +85,97 @@ Rules you MUST follow:
 3. All questions must be factually accurate and appropriate for the topic "${skill}".
 4. Do NOT include any text outside the JSON array.`;
 
-    const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: systemPrompt }],
-      temperature: 0.5,
-      max_tokens: 2048,
-    });
+    let raw = "";
 
-    let raw = completion.choices[0]?.message?.content?.trim() || "";
-    raw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/g, "").trim();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch (parseErr) {
-      console.error("❌ Groq JSON parse error:", parseErr.message);
-      return res.status(502).json({ error: "AI returned malformed JSON. Please try again." });
+    // 1. Try Google Gemini API if configured
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const geminiRes = await axios.post(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+          {
+            contents: [{ parts: [{ text: systemPrompt }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.5,
+            },
+          },
+          { timeout: 10000 }
+        );
+        raw = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      } catch (geminiErr) {
+        console.warn("⚠️ Gemini quiz generation failed, trying next provider:", geminiErr.message);
+      }
     }
 
-    const quizData = parsed
-      .filter(
-        (q) =>
-          q.question &&
-          Array.isArray(q.options) &&
-          q.options.length === 4 &&
-          q.correctAnswer &&
-          q.options.includes(q.correctAnswer)
-      )
-      .slice(0, 5);
+    // 2. Try Groq if configured and Gemini was not used or failed
+    if (!raw && process.env.GROQ_API_KEY) {
+      try {
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+        const completion = await groq.chat.completions.create({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: systemPrompt }],
+          temperature: 0.5,
+          max_tokens: 2048,
+        });
+        raw = completion.choices[0]?.message?.content?.trim() || "";
+      } catch (groqErr) {
+        console.warn("⚠️ Groq quiz generation failed, trying next provider:", groqErr.message);
+      }
+    }
 
-    if (quizData.length === 0)
-      return res.status(502).json({ error: "AI returned no valid questions. Please retry." });
+    // 3. Try OpenRouter if configured and previous providers failed
+    if (!raw && process.env.OPENROUTER_API_KEY) {
+      try {
+        const openrouterRes = await axios.post(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            model: "meta-llama/llama-3.3-70b-instruct:free",
+            messages: [{ role: "user", content: systemPrompt }],
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            timeout: 10000,
+          }
+        );
+        raw = openrouterRes.data?.choices?.[0]?.message?.content || "";
+      } catch (openrouterErr) {
+        console.warn("⚠️ OpenRouter quiz generation failed:", openrouterErr.message);
+      }
+    }
 
-    return res.json(quizData);
+    // 4. Parse AI output
+    if (raw) {
+      const cleanRaw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/g, "").trim();
+      try {
+        const parsed = JSON.parse(cleanRaw);
+        const quizData = parsed
+          .filter(
+            (q) =>
+              q.question &&
+              Array.isArray(q.options) &&
+              q.options.length === 4 &&
+              q.correctAnswer &&
+              q.options.includes(q.correctAnswer)
+          )
+          .slice(0, 5);
+
+        if (quizData.length === 5) {
+          return res.json(quizData);
+        }
+      } catch (parseErr) {
+        console.warn("⚠️ AI returned malformed JSON, falling back to curated questions:", parseErr.message);
+      }
+    }
+
+    // 5. Safe Fallback: Return structured skill-specific questions
+    console.log(`[Quiz] Using structured fallback assessment for skill: ${skill}`);
+    return res.json(getFallbackQuestions(skill));
   } catch (error) {
-    console.error("❌ Groq Quiz Generation Error:", error?.message || error);
-    res.status(500).json({ error: "Quiz generation failed. Please try again." });
+    console.error("❌ Quiz Generation Error:", error?.message || error);
+    return res.json(getFallbackQuestions(req.body.skill || "General"));
   }
 };
 
