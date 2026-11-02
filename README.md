@@ -25,7 +25,7 @@ A premium, minimalist full-stack platform enabling peer-to-peer skill exchange, 
 | **Backend** | Node.js, Express.js (ESM), Socket.IO, Multer + Cloudinary Storage |
 | **Database** | MongoDB Atlas (Mongoose ODM with unique compound index validations) |
 | **Integrations** | Jitsi Meet (8x8.vc RS256 JWTs), Groq SDK (`llama-3.3-70b-versatile`) |
-| **Operations** | GitHub Actions CI, Express Rate Limiting, Atomic Cron Claims |
+| **Operations** | Rate Limiting, Health Checks, Atomic Cron Claims |
 
 ---
 

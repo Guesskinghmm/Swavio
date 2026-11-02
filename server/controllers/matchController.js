@@ -166,9 +166,11 @@ export const getMyMatches = async (req, res) => {
       $or: [{ user1: userId }, { user2: userId }],
     }).populate("user1 user2", "-password");
 
-    const myMatches = matches.map((m) =>
-      m.user1._id.toString() === userId.toString() ? m.user2 : m.user1
-    );
+    const myMatches = matches
+      .filter((m) => m.user1 && m.user2)
+      .map((m) =>
+        m.user1._id.toString() === userId.toString() ? m.user2 : m.user1
+      );
 
     res.json(myMatches);
   } catch (err) {

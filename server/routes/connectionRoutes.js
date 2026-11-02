@@ -158,7 +158,7 @@ router.put("/accept/:id", protect, async (req, res) => {
     );
 
     const senderId = conn.user1.toString();
-    const receiverName = populated.user2.fullName || "Someone";
+    const receiverName = populated?.user2?.fullName || "Someone";
 
     const notif = await Notification.create({
       user: senderId,

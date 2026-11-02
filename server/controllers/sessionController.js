@@ -139,9 +139,9 @@ export const completeSession = async (req, res) => {
       { new: true }
     );
 
-    const teacher = await User.findById(updatedSession.teacherId);
-    if (teacher && typeof rating === "number") {
-      teacher.ratingsReceived.push({ userId: updatedSession.studentId, rating });
+    const numRating = Number(rating);
+    if (teacher && !isNaN(numRating) && numRating >= 1 && numRating <= 5) {
+      teacher.ratingsReceived.push({ userId: updatedSession.studentId, rating: numRating });
       teacher.ratingCount = teacher.ratingsReceived.length;
       teacher.rating = teacher.ratingsReceived.reduce((sum, r) => sum + r.rating, 0) / teacher.ratingCount;
 
