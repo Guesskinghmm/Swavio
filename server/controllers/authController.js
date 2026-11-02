@@ -175,3 +175,9 @@ export const googleAuth = async (req, res) => {
     res.status(401).json({ msg: "Google authentication failed", error: error.message });
   }
 };
+
+// ── Public Google Client ID Endpoint ──────────────────────────────────────────
+export const getGoogleClientId = (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID || process.env.REACT_APP_GOOGLE_CLIENT_ID || "";
+  res.json({ clientId });
+};

@@ -6,7 +6,23 @@ import { Loader2 } from "lucide-react";
 export default function GoogleAuthButton({ text = "Continue with Google" }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [clientId, setClientId] = useState(process.env.REACT_APP_GOOGLE_CLIENT_ID || "");
   const navigate = useNavigate();
+
+  // If clientId was not baked in at frontend build time, fetch it dynamically from backend
+  useEffect(() => {
+    if (!clientId) {
+      api
+        .get("/api/auth/google-client-id")
+        .then((res) => {
+          if (res.data?.clientId) {
+            setClientId(res.data.clientId);
+            setError("");
+          }
+        })
+        .catch(() => {});
+    }
+  }, [clientId]);
 
   const handleGoogleCredentialResponse = useCallback(
     async (response) => {
@@ -36,14 +52,13 @@ export default function GoogleAuthButton({ text = "Continue with Google" }) {
   );
 
   useEffect(() => {
-    const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-    if (!googleClientId) return;
+    if (!clientId) return;
 
     function initializeGoogleGsi() {
       try {
         if (window.google?.accounts?.id) {
           window.google.accounts.id.initialize({
-            client_id: googleClientId,
+            client_id: clientId,
             callback: handleGoogleCredentialResponse,
           });
         }
@@ -64,12 +79,10 @@ export default function GoogleAuthButton({ text = "Continue with Google" }) {
     } else {
       initializeGoogleGsi();
     }
-  }, [handleGoogleCredentialResponse]);
+  }, [clientId, handleGoogleCredentialResponse]);
 
   const handleGoogleClick = () => {
-    const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-
-    if (!googleClientId) {
+    if (!clientId) {
       setError("Google OAuth Client ID is not configured (REACT_APP_GOOGLE_CLIENT_ID).");
       return;
     }
@@ -80,7 +93,7 @@ export default function GoogleAuthButton({ text = "Continue with Google" }) {
           // If One Tap is skipped/suppressed, show standard OAuth popup redirect
           const redirectUri = window.location.origin;
           const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
-            googleClientId
+            clientId
           )}&response_type=token&scope=openid%20profile%20email&redirect_uri=${encodeURIComponent(
             redirectUri
           )}`;
