@@ -1,12 +1,12 @@
 // client/src/components/ChatHistory.jsx
 import { useEffect, useState } from "react";
-import axios from "../api/axios";
+import api from "../api/axios";
 
 const ChatHistory = ({ userId }) => {
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
-    axios.get(`/api/messages/${userId}`).then(res => setMessages(res.data));
+    api.get(`/api/messages/${userId}`).then(res => setMessages(res.data));
   }, [userId]);
 
   return (

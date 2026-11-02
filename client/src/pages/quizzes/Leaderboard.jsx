@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../api/axios";
 import { Link } from "react-router-dom";
 import { Sparkles, Trophy, History } from "lucide-react";
 
@@ -11,7 +11,7 @@ export default function Leaderboard() {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/quizzes/leaderboard`);
+        const res = await api.get("/api/quizzes/leaderboard");
         setLeaders(res.data || []);
       } catch (err) {
         console.error("Failed to fetch leaderboard:", err);

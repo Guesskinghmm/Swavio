@@ -242,8 +242,8 @@ export default function Profile() {
         });
         data.append("profilePicture", selectedFile);
 
-        res = await axios.put(
-          `${process.env.REACT_APP_API_URL}/api/users/${loggedInUserId}`,
+        res = await api.put(
+          `/api/users/${loggedInUserId}`,
           data,
           { headers: { "Content-Type": "multipart/form-data" } }
         );
@@ -254,8 +254,8 @@ export default function Profile() {
             payload[key] = JSON.stringify(payload[key]);
           }
         });
-        res = await axios.put(
-          `${process.env.REACT_APP_API_URL}/api/users/edit/${loggedInUserId}`,
+        res = await api.put(
+          `/api/users/edit/${loggedInUserId}`,
           payload
         );
       }
@@ -295,8 +295,8 @@ export default function Profile() {
   // ── Delete Profile Picture ─────────────────
   const deleteProfilePicture = async () => {
     try {
-      await axios.delete(
-        `${process.env.REACT_APP_API_URL}/api/users/profile-picture/${loggedInUserId}`
+      await api.delete(
+        `/api/users/profile-picture/${loggedInUserId}`
       );
       fetchProfile();
       setPreviewImage(null);

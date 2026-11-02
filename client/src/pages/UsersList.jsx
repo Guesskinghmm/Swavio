@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import { Link } from "react-router-dom";
 import { Users, Star } from "lucide-react";
 import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
@@ -11,7 +11,7 @@ export default function UsersList() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/users`);
+        const res = await api.get("/api/users");
         // Exclude current user
         const filteredUsers = res.data.filter(
           (user) => user._id !== loggedInUserId

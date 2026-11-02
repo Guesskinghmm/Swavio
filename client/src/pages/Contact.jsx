@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import api from "../api/axios";
 import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 
@@ -20,14 +21,7 @@ export default function Contact() {
 
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error("Failed to send message");
-
+      await api.post("/api/contact", formData);
       setSubmitted(true);
       setFormData({ name: "", email: "", message: "" });
     } catch (err) {

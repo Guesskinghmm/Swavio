@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axios";
 import { History, Brain, ChevronLeft, Calendar } from "lucide-react";
 
 export default function UserQuizHistory() {
@@ -10,8 +10,8 @@ export default function UserQuizHistory() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/quizzes/history/${userId}`)
+    api
+      .get(`/api/quizzes/history/${userId}`)
       .then((res) => {
         setData(res.data);
         setLoading(false);

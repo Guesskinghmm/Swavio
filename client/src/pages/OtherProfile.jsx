@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 import { Star, Calendar, BookOpen, Award, CheckCircle, Mail, MapPin } from "lucide-react";
 import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 
@@ -13,7 +13,7 @@ export default function OtherProfile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/${userId}`);
+        const res = await api.get(`/api/users/${userId}`);
         setUser(res.data);
       } catch (err) {
         console.error("Error fetching profile:", err);
@@ -26,12 +26,7 @@ export default function OtherProfile() {
   const submitRating = async (star) => {
     setRating(star);
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/users/rate/${userId}`,
-        { rating: star },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post(`/api/users/rate/${userId}`, { rating: star });
 
       setUser({
         ...user,
