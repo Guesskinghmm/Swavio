@@ -15,7 +15,7 @@ import {
   MessageSquare,
   ArrowLeft,
 } from "lucide-react";
-import { socket, SERVER_URL } from "../socket";
+import { socket } from "../socket";
 import VideoCall from "./VideoCall";
 import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 

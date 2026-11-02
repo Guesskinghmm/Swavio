@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { Loader2 } from "lucide-react";
@@ -8,11 +8,50 @@ export default function GoogleAuthButton({ text = "Continue with Google" }) {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const handleGoogleCredentialResponse = useCallback(
+    async (response) => {
+      if (!response?.credential) return;
+      setLoading(true);
+      setError("");
+
+      try {
+        const res = await api.post("/api/auth/google", {
+          credential: response.credential,
+        });
+
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("userId", res.data.user._id);
+        localStorage.setItem("fullName", res.data.user.fullName || "");
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+
+        navigate("/dashboard");
+      } catch (err) {
+        console.error("Google login failed:", err.message);
+        setError(err.response?.data?.msg || "Google authentication failed. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [navigate]
+  );
+
   useEffect(() => {
     const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
     if (!googleClientId) return;
 
-    // Load Google Identity Services script if not already present
+    function initializeGoogleGsi() {
+      try {
+        if (window.google?.accounts?.id) {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleCredentialResponse,
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to initialize Google GSI:", err.message);
+      }
+    }
+
     const scriptId = "google-jssdk";
     if (!document.getElementById(scriptId)) {
       const script = document.createElement("script");
@@ -22,45 +61,10 @@ export default function GoogleAuthButton({ text = "Continue with Google" }) {
       script.defer = true;
       script.onload = initializeGoogleGsi;
       document.body.appendChild(script);
-    } else if (window.google?.accounts?.id) {
+    } else {
       initializeGoogleGsi();
     }
-
-    function initializeGoogleGsi() {
-      try {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: handleGoogleCredentialResponse,
-        });
-      } catch (err) {
-        console.warn("Failed to initialize Google GSI:", err.message);
-      }
-    }
-  }, []);
-
-  const handleGoogleCredentialResponse = async (response) => {
-    if (!response?.credential) return;
-    setLoading(true);
-    setError("");
-
-    try {
-      const res = await api.post("/api/auth/google", {
-        credential: response.credential,
-      });
-
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userId", res.data.user._id);
-      localStorage.setItem("fullName", res.data.user.fullName || "");
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-
-      navigate("/dashboard");
-    } catch (err) {
-      console.error("Google login failed:", err.message);
-      setError(err.response?.data?.msg || "Google authentication failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [handleGoogleCredentialResponse]);
 
   const handleGoogleClick = () => {
     const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
