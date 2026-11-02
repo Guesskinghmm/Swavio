@@ -11,16 +11,18 @@ import {
   Search,
   X,
   ChevronRight,
+  User,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import logo from "../assets/logo.png";
 import NotificationBell from "./NotificationBell";
-import axios from "axios";
-import { socket, SERVER_URL } from "../socket";
+import api from "../api/axios";
+import { socket } from "../socket";
 import { getAvatarUrl, handleAvatarError } from "../utils/avatarUrl";
 
 const NAV_LINKS = [
   { to: "/dashboard",          label: "Dashboard",   icon: LayoutDashboard },
+  { to: "/profile",            label: "My Profile",  icon: User },
   { to: "/matchmaking",        label: "Matchmaking", icon: Users },
   { to: "/chat",               label: "Messages",    icon: MessageSquare },
   { to: "/connections",        label: "Connections", icon: Users },
@@ -40,8 +42,8 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!userId) return;
-    axios
-      .get(`${SERVER_URL}/api/users/${userId}`)
+    api
+      .get(`/api/users/${userId}`)
       .then((res) => setUser(res.data))
       .catch((err) => console.error("Error fetching user:", err));
     // Note: socket.emit("join") is handled once in App.jsx
