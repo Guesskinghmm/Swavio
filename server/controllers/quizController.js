@@ -4,6 +4,16 @@ import QuizResult from "../models/QuizResult.js";
 import Quiz from "../models/Quiz.js";
 import User from "../models/User.js";
 
+// Fisher-Yates array shuffle to randomize multiple-choice option positions
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 // Helper for dynamic educational fallback questions when API keys are not set or rate-limited
 function getFallbackQuestions(skill) {
   return [
@@ -146,7 +156,7 @@ Rules you MUST follow:
       }
     }
 
-    // 4. Parse AI output
+    // 4. Parse AI output & shuffle options so the correct answer is randomized
     if (raw) {
       const cleanRaw = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/g, "").trim();
       try {
@@ -160,7 +170,11 @@ Rules you MUST follow:
               q.correctAnswer &&
               q.options.includes(q.correctAnswer)
           )
-          .slice(0, 5);
+          .slice(0, 5)
+          .map((q) => ({
+            ...q,
+            options: shuffleArray(q.options),
+          }));
 
         if (quizData.length === 5) {
           return res.json(quizData);
@@ -170,12 +184,20 @@ Rules you MUST follow:
       }
     }
 
-    // 5. Safe Fallback: Return structured skill-specific questions
+    // 5. Safe Fallback: Return structured skill-specific questions with randomized option orders
     console.log(`[Quiz] Using structured fallback assessment for skill: ${skill}`);
-    return res.json(getFallbackQuestions(skill));
+    const fallbackShuffled = getFallbackQuestions(skill).map((q) => ({
+      ...q,
+      options: shuffleArray(q.options),
+    }));
+    return res.json(fallbackShuffled);
   } catch (error) {
     console.error("❌ Quiz Generation Error:", error?.message || error);
-    return res.json(getFallbackQuestions(req.body.skill || "General"));
+    const fallbackShuffled = getFallbackQuestions(req.body.skill || "General").map((q) => ({
+      ...q,
+      options: shuffleArray(q.options),
+    }));
+    return res.json(fallbackShuffled);
   }
 };
 
